@@ -100,11 +100,51 @@ export default {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "slide-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-left": {
+          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-right": {
+          "0%": { opacity: "0", transform: "translateX(-20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "scale-in": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.5", boxShadow: "0 0 10px rgba(210, 105, 30, 0.2)" },
+          "50%": { opacity: "1", boxShadow: "0 0 30px rgba(210, 105, 30, 0.4)" },
+        },
+        "shimmer": {
+          "0%": { left: "-100%" },
+          "100%": { left: "100%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         float: "float 3s ease-in-out infinite",
+        "slide-up": "slide-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "slide-down": "slide-down 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "slide-left": "slide-left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "slide-right": "slide-right 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "fade-in": "fade-in 0.8s ease-out",
+        "scale-in": "scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "shimmer": "shimmer 2.5s infinite",
       },
     },
   },

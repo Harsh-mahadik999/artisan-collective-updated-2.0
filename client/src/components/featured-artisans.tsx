@@ -39,11 +39,12 @@ export default function FeaturedArtisans() {
   }
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-24 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 animate-slide-in-down">
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">Meet Our Artisans</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-20 animate-slide-in-down">
+          <span className="inline-block text-sm font-semibold text-primary uppercase tracking-wider mb-3 animate-fade-in">Talented Creators</span>
+          <h2 className="text-4xl sm:text-5xl font-serif font-bold text-foreground mb-6 animate-slide-in-up">Meet Our Artisans</h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-slide-in-up transition-slow" style={{ animationDelay: '0.1s' }}>
             Discover the passionate creators behind each masterpiece, their unique stories, and time-honored techniques passed down through generations.
           </p>
         </div>

@@ -93,26 +93,27 @@ export default function ProductGrid() {
   }
 
   return (
-    <section className="py-20">
+    <section className="py-24 bg-gradient-to-b from-background via-muted/30 to-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 animate-slide-in-down">
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">Handcrafted Treasures</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Each piece is unique, carrying the soul and skill of its creator. Browse our curated collection of authentic handmade crafts.
+        <div className="text-center mb-20 animate-slide-in-down">
+          <span className="inline-block text-sm font-semibold text-primary uppercase tracking-wider mb-3 animate-fade-in">Explore Our Collection</span>
+          <h2 className="text-4xl sm:text-5xl font-serif font-bold text-foreground mb-6 animate-slide-in-up">Handcrafted Treasures</h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 animate-slide-in-up transition-slow" style={{ animationDelay: '0.1s' }}>
+            Each piece is unique, carrying the soul and skill of its creator. Browse our curated collection of authentic handmade crafts from artisans around the world.
           </p>
           
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <div className="flex flex-wrap justify-center gap-3">
             {categories.map((category, index) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? "default" : "secondary"}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className={`smooth-transition ${selectedCategory === category.id 
-                  ? "bg-primary text-primary-foreground shadow-md" 
-                  : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"
-                } animate-fade-in-scale`}
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className={`smooth-transition button-hover cursor-pointer ${selectedCategory === category.id 
+                  ? "bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110" 
+                  : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary hover:scale-105"
+                } animate-fade-in-scale px-6 py-2 font-medium`}
+                style={{ animationDelay: `${index * 0.08}s` }}
                 data-testid={`button-filter-${category.id}`}
               >
                 {category.label}
