@@ -1,9 +1,9 @@
 export interface CartContextType {
   items: CartItemWithProduct[];
-  addToCart: (productId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  removeFromCart: (itemId: string) => void;
-  clearCart: () => void;
+  addToCart: (productId: string) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  removeFromCart: (itemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   total: number;
   itemCount: number;
   isOpen: boolean;

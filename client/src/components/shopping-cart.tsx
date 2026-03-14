@@ -1,11 +1,86 @@
-import { X, Plus, Minus, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, Plus, Minus, ShoppingBag, HeartHandshake, Smile, Meh, Frown, Angry, Sparkles } from "lucide-react";
 import { useCart } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
+
+type MoodKey = "good" | "normal" | "okay" | "sad" | "angry";
+
+const MOODS: Array<{ key: MoodKey; label: string; emoji: string; icon: typeof Smile }> = [
+  { key: "good", label: "Good", emoji: "😄", icon: Smile },
+  { key: "normal", label: "Normal", emoji: "🙂", icon: Smile },
+  { key: "okay", label: "Okay", emoji: "😐", icon: Meh },
+  { key: "sad", label: "Sad", emoji: "😔", icon: Frown },
+  { key: "angry", label: "Angry", emoji: "😠", icon: Angry },
+];
 
 export default function ShoppingCart() {
-  const { items, updateQuantity, removeFromCart, total, isOpen, setIsOpen } = useCart();
+  const { items, updateQuantity, removeFromCart, clearCart, total, isOpen, setIsOpen } = useCart();
+  const { toast } = useToast();
+  const [donationByArtisan, setDonationByArtisan] = useState<Record<string, number>>({});
+  const [mood, setMood] = useState<MoodKey>("good");
+  const [feedbackReason, setFeedbackReason] = useState("");
+  const [paymentReceipt, setPaymentReceipt] = useState<null | {
+    amount: number;
+    donation: number;
+    mood: MoodKey;
+    reason: string;
+  }>(null);
+
+  useEffect(() => {
+    if (!items.length) return;
+
+    const artisanNames = Array.from(new Set(items.map((item) => item.product.artisanName)));
+    setDonationByArtisan((prev) => {
+      const next: Record<string, number> = {};
+      artisanNames.forEach((name) => {
+        next[name] = prev[name] ?? 1;
+      });
+      return next;
+    });
+  }, [items]);
+
+  const donationTotal = useMemo(() => {
+    return Object.values(donationByArtisan).reduce((sum, val) => sum + val, 0);
+  }, [donationByArtisan]);
+
+  const grandTotal = total + donationTotal;
+
+  const handleCheckout = async () => {
+    const filledLines = feedbackReason
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (filledLines.length < 3) {
+      toast({
+        title: "Add a little more feedback",
+        description: "Please write at least 3 lines in the reason box before payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentDonation = donationTotal;
+    const currentTotal = grandTotal;
+    await clearCart();
+    setPaymentReceipt({
+      amount: currentTotal,
+      donation: currentDonation,
+      mood,
+      reason: feedbackReason,
+    });
+    setFeedbackReason("");
+
+    toast({
+      title: "Payment completed",
+      description: `Order placed successfully. Total paid $${currentTotal.toFixed(2)} including donation.`,
+    });
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -19,6 +94,18 @@ export default function ShoppingCart() {
         
         <div className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto py-6">
+            {paymentReceipt && (
+              <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4" data-testid="payment-receipt">
+                <p className="font-semibold text-foreground flex items-center">
+                  <Sparkles className="h-4 w-4 mr-2 text-primary" />
+                  Payment done successfully
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">Paid: ${paymentReceipt.amount.toFixed(2)} (Donation: ${paymentReceipt.donation.toFixed(2)})</p>
+                <p className="text-sm mt-2">Mood: {MOODS.find((m) => m.key === paymentReceipt.mood)?.emoji} {MOODS.find((m) => m.key === paymentReceipt.mood)?.label}</p>
+                <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{paymentReceipt.reason}</p>
+              </div>
+            )}
+
             {items.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -29,9 +116,14 @@ export default function ShoppingCart() {
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-4 border border-border rounded-lg" data-testid={`cart-item-${item.id}`}>
                     <img 
-                      src={item.product.images?.[0] || "/placeholder-product.jpg"} 
+                      src={getProductImage(item.product)} 
                       alt={item.product.name}
                       className="w-16 h-16 object-cover rounded-lg"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        img.onerror = null;
+                        img.src = getCategoryFallbackImage(undefined, item.product.id || item.id, 2);
+                      }}
                     />
                     <div className="flex-1">
                       <h4 className="font-medium text-sm" data-testid={`text-item-name-${item.id}`}>
@@ -87,18 +179,90 @@ export default function ShoppingCart() {
           {items.length > 0 && (
             <>
               <Separator className="my-4" />
-              <div className="space-y-4">
+              <div className="space-y-5 pb-4">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-sm font-semibold flex items-center mb-2">
+                    <HeartHandshake className="h-4 w-4 mr-2 text-primary" />
+                    Donate to artisans ($1 to $10 each)
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(donationByArtisan).map(([artisanName, value]) => (
+                      <div key={artisanName} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{artisanName}</span>
+                          <span className="font-semibold text-primary">${value}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={value}
+                          onChange={(e) => {
+                            const next = Number(e.target.value);
+                            setDonationByArtisan((prev) => ({ ...prev, [artisanName]: next }));
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-sm font-semibold mb-2">How do you feel about this order?</p>
+                  <div className="grid grid-cols-5 gap-1">
+                    {MOODS.map((item) => {
+                      const Icon = item.icon;
+                      const active = mood === item.key;
+                      return (
+                        <Button
+                          key={item.key}
+                          variant={active ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMood(item.key)}
+                          className="h-auto py-2 px-1 flex flex-col gap-1"
+                        >
+                          <span>{item.emoji}</span>
+                          <span className="text-[10px] leading-none">{item.label}</span>
+                          <Icon className="h-3 w-3" />
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-sm font-semibold mb-2">Why this feeling? (min 3 lines)</p>
+                  <Textarea
+                    rows={4}
+                    placeholder={"Line 1: What you liked\nLine 2: What can improve\nLine 3: Why you chose this mood"}
+                    value={feedbackReason}
+                    onChange={(e) => setFeedbackReason(e.target.value)}
+                    data-testid="textarea-feedback-reason"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
+                  <span className="font-semibold">${total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Donation</span>
+                  <span className="font-semibold text-primary">${donationTotal.toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">Total:</span>
                   <span className="text-xl font-bold text-primary" data-testid="text-cart-total">
-                    ${total.toFixed(2)}
+                    ${grandTotal.toFixed(2)}
                   </span>
                 </div>
                 <Button 
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={handleCheckout}
                   data-testid="button-checkout"
                 >
-                  Proceed to Checkout
+                  Pay Now
                 </Button>
               </div>
             </>

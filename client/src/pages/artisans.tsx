@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const ARTISAN_FALLBACK_IMAGE = "https://picsum.photos/seed/artisan-fallback/900/700";
+
 export default function ArtisansPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -110,6 +112,11 @@ export default function ArtisansPage() {
                     src={artisan.profileImage}
                     alt={`${artisan.name} - ${artisan.specialty} artisan`}
                     className="w-full h-56 object-cover"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      img.onerror = null;
+                      img.src = ARTISAN_FALLBACK_IMAGE;
+                    }}
                   />
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-3">

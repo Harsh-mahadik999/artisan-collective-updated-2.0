@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Heart, Star, ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { api } from "@/lib/api";
 import { useCart } from "@/App";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
 
 const categories = [
   { id: "all", label: "All" },
@@ -44,9 +46,17 @@ export default function ProductGrid() {
     setWishlist(newWishlist);
   };
 
-  const handleAddToCart = (productId: string, productName: string) => {
-    addToCart(productId);
-    toast({ title: `${productName} added to cart` });
+  const handleAddToCart = async (productId: string, productName: string) => {
+    try {
+      await addToCart(productId);
+      toast({ title: `${productName} added to cart` });
+    } catch {
+      toast({
+        title: "Could not add to cart",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredProducts = products?.filter((product: any) => 
@@ -132,9 +142,14 @@ export default function ProductGrid() {
             >
               <div className="relative bg-muted overflow-hidden">
                 <img 
-                  src={product.images?.[0] || "/placeholder-product.jpg"} 
+                  src={getProductImage(product)} 
                   alt={product.name} 
                   className="w-full h-48 object-cover group-hover:scale-110 smooth-transition duration-500"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    img.onerror = null;
+                    img.src = getCategoryFallbackImage(product.category, product.id || product.name, 1);
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 smooth-transition"></div>
                 <Button
@@ -161,7 +176,7 @@ export default function ProductGrid() {
                 <p className="text-muted-foreground mb-4 text-sm line-clamp-2 leading-relaxed" data-testid={`text-product-description-${product.id}`}>
                   {product.description}
                 </p>
-                <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div className="flex items-center justify-between pt-4 border-t border-border gap-2">
                   <div className="flex items-center space-x-2">
                     <span className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
                       ${product.price}
@@ -173,15 +188,27 @@ export default function ProductGrid() {
                       </span>
                     </div>
                   </div>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleAddToCart(product.id, product.name)}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg smooth-transition hover:scale-105"
-                    data-testid={`button-add-to-cart-${product.id}`}
-                  >
-                    <ShoppingCart className="mr-1 h-3 w-3" />
-                    Add
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/products/${product.id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="hover:border-primary hover:text-primary"
+                        data-testid={`button-view-product-${product.id}`}
+                      >
+                        View
+                      </Button>
+                    </Link>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleAddToCart(product.id, product.name)}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg smooth-transition hover:scale-105"
+                      data-testid={`button-add-to-cart-${product.id}`}
+                    >
+                      <ShoppingCart className="mr-1 h-3 w-3" />
+                      Add
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

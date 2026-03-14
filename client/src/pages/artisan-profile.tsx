@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
+
+const ARTISAN_FALLBACK_IMAGE = "https://picsum.photos/seed/artisan-profile-fallback/1200/900";
 
 export default function ArtisanProfile() {
   const { id } = useParams();
@@ -46,9 +49,17 @@ export default function ArtisanProfile() {
     setWishlist(newWishlist);
   };
 
-  const handleAddToCart = (productId: string, productName: string) => {
-    addToCart(productId);
-    toast({ title: `${productName} added to cart` });
+  const handleAddToCart = async (productId: string, productName: string) => {
+    try {
+      await addToCart(productId);
+      toast({ title: `${productName} added to cart` });
+    } catch {
+      toast({
+        title: "Could not add to cart",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter stories by this artisan
@@ -103,6 +114,11 @@ export default function ArtisanProfile() {
                 src={artisan.profileImage} 
                 alt={`${artisan.name} - ${artisan.specialty} artisan`} 
                 className="rounded-2xl shadow-2xl w-full max-w-md mx-auto lg:mx-0"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  img.src = ARTISAN_FALLBACK_IMAGE;
+                }}
               />
             </div>
             <div>
@@ -196,9 +212,14 @@ export default function ArtisanProfile() {
                   <Card key={product.id} className="overflow-hidden border border-border group hover:shadow-lg smooth-transition" data-testid={`card-product-${product.id}`}>
                     <div className="relative">
                       <img 
-                        src={product.images?.[0] || "/placeholder-product.jpg"} 
+                        src={getProductImage(product)} 
                         alt={product.name} 
                         className="w-full h-48 object-cover group-hover:scale-105 smooth-transition"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.onerror = null;
+                          img.src = getCategoryFallbackImage(product.category, product.id || product.name, 2);
+                        }}
                       />
                       <Button
                         variant="ghost"

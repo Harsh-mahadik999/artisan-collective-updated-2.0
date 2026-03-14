@@ -139,9 +139,11 @@ export default function Community() {
                       <User className="h-4 w-4" />
                       <span>by {getAuthorName(featuredStory.authorId)}</span>
                     </div>
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90" data-testid="button-read-featured">
-                      Read Story <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link href={`/community/stories/${featuredStory.id}`}>
+                      <Button className="bg-primary text-primary-foreground hover:bg-primary/90" data-testid="button-read-featured">
+                        Read Story <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -251,9 +253,11 @@ export default function Community() {
                           <User className="h-4 w-4" />
                           <span>by {getAuthorName(story.authorId)}</span>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-0" data-testid={`button-read-story-${story.id}`}>
-                          Read <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
+                        <Link href={`/community/stories/${story.id}`}>
+                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-0" data-testid={`button-read-story-${story.id}`}>
+                            Read <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>

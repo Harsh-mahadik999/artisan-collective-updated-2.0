@@ -1,0 +1,13 @@
+
+> rest-express@1.0.0 check
+> tsc
+
+client/src/App.tsx(148,13): error TS2339: Property 'path' does not exist on type 'RegexRouteParams | { [param: number]: string | undefined; }'.
+client/src/components/ai-story-generator.tsx(32,25): error TS2345: Argument of type 'Response' is not assignable to parameter of type 'SetStateAction<StoryGenerationResponse | null>'.
+client/src/pages/ai-storytelling.tsx(45,25): error TS2345: Argument of type 'Response' is not assignable to parameter of type 'SetStateAction<StoryGenerationResponse | null>'.
+server/storage.ts(221,7): error TS2322: Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+  The types returned by 'pop()' are incompatible between these types.
+    Type 'unknown' is not assignable to type 'string | undefined'.
+server/storage.ts(319,7): error TS2322: Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+  The types returned by 'pop()' are incompatible between these types.
+    Type 'unknown' is not assignable to type 'string | undefined'.

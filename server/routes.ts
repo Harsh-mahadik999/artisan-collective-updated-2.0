@@ -6,6 +6,12 @@ import { generateProductStory, generateArtisanStory } from "./services/gemini";
 import { insertArtisanSchema, insertProductSchema, insertStorySchema, insertCartItemSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.use("/api/cart", (_req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+  });
   
   // Artisan routes
   app.get("/api/artisans", async (req, res) => {

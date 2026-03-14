@@ -1,5 +1,10 @@
 import { apiRequest } from "./queryClient";
 
+interface StoryGenerationResponse {
+  description: string;
+  captions: string[];
+}
+
 export const api = {
   // Artisans
   getArtisans: () => fetch("/api/artisans").then(res => res.json()),
@@ -31,6 +36,9 @@ export const api = {
   clearCart: (sessionId: string) => apiRequest("DELETE", `/api/cart/session/${sessionId}`),
   
   // AI Generation
-  generateStory: (data: any) => apiRequest("POST", "/api/ai/generate-story", data),
+  generateStory: async (data: any): Promise<StoryGenerationResponse> => {
+    const response = await apiRequest("POST", "/api/ai/generate-story", data);
+    return response.json();
+  },
   getArtisanGenerations: (artisanId: string) => fetch(`/api/ai/generations/${artisanId}`).then(res => res.json()),
 };
