@@ -1,150 +1,131 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { CartContextType, CartItemWithProduct } from "@/types";
 
 const CartContext = createContext<CartContextType | null>(null);
+
 const CART_SESSION_STORAGE_KEY = "artisan-collective-cart-session";
 const CART_CACHE_STORAGE_KEY = "artisan-collective-cart-cache";
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within CartProvider");
-  }
-  return context;
-};
+export function useCart(): CartContextType {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItemWithProduct[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [sessionId] = useState(() => {
+
+  const sessionId = useRef(() => {
     if (typeof window === "undefined") return "guest-session";
     const existing = window.localStorage.getItem(CART_SESSION_STORAGE_KEY);
     if (existing) return existing;
     const generated = `guest-${crypto.randomUUID()}`;
     window.localStorage.setItem(CART_SESSION_STORAGE_KEY, generated);
     return generated;
-  });
+  }).current();
 
-  const writeCartCache = (nextItems: CartItemWithProduct[]) => {
+  const writeCartCache = useCallback((nextItems: CartItemWithProduct[]) => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(CART_CACHE_STORAGE_KEY, JSON.stringify(nextItems));
-  };
+  }, []);
 
-  const readCartCache = (): CartItemWithProduct[] => {
+  const readCartCache = useCallback((): CartItemWithProduct[] => {
     if (typeof window === "undefined") return [];
     const raw = window.localStorage.getItem(CART_CACHE_STORAGE_KEY);
     if (!raw) return [];
     try {
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed as CartItemWithProduct[];
+      return Array.isArray(parsed) ? (parsed as CartItemWithProduct[]) : [];
     } catch {
       return [];
     }
-  };
-
-  const hydrateWithProducts = async (cartItems: Array<{ id: string; productId: string; quantity: number }>) => {
-    return Promise.all(
-      cartItems.map(async (item) => {
-        const product = await api.getProduct(item.productId);
-        const artisan = await api.getArtisan(product.artisanId);
-        return {
-          ...item,
-          product: {
-            ...product,
-            artisanName: artisan.name,
-          },
-        };
-      })
-    );
-  };
-
-  const loadCart = async () => {
-    try {
-      const cartItems = await api.getCartItems(sessionId);
-      let itemsWithProducts = await hydrateWithProducts(cartItems);
-
-      if (itemsWithProducts.length === 0) {
-        const cachedItems = readCartCache();
-        if (cachedItems.length > 0) {
-          for (const cachedItem of cachedItems) {
-            await api.addToCart({
-              sessionId,
-              productId: cachedItem.productId,
-              quantity: Math.max(1, Number(cachedItem.quantity) || 1),
-            });
-          }
-          const restoredItems = await api.getCartItems(sessionId);
-          itemsWithProducts = await hydrateWithProducts(restoredItems);
-        }
-      }
-
-      setItems(itemsWithProducts);
-      writeCartCache(itemsWithProducts);
-    } catch (error) {
-      console.error("Failed to load cart:", error);
-      const cachedItems = readCartCache();
-      if (cachedItems.length > 0) {
-        setItems(cachedItems);
-      }
-    }
-  };
-
-  useEffect(() => {
-    const cachedItems = readCartCache();
-    if (cachedItems.length > 0) {
-      setItems(cachedItems);
-    }
-    loadCart();
   }, []);
 
-  const addToCart = async (productId: string) => {
+  const loadCart = useCallback(async () => {
+    try {
+      const cartItems = await api.getCartItems(sessionId);
+      const fullItems = await Promise.all(
+        cartItems.map(async (item: any) => {
+          const product = await api.getProduct(item.productId);
+          const artisan = await api.getArtisan(product.artisanId);
+          return { ...item, product: { ...product, artisanName: artisan.name } };
+        })
+      );
+      
+      setItems(fullItems);
+      writeCartCache(fullItems);
+    } catch (err) {
+      console.error("Failed to load cart:", err);
+      // Fallback to cache on error
+      const cached = readCartCache();
+      if (cached.length > 0) {
+        setItems(cached);
+      }
+    }
+  }, [sessionId, writeCartCache, readCartCache]);
+
+  useEffect(() => {
+    // Initial hydration from cache for immediate UI
+    const cached = readCartCache();
+    if (cached.length > 0) {
+      setItems(cached);
+    }
+    loadCart();
+  }, [loadCart, readCartCache]);
+
+  const addToCart = useCallback(async (productId: string) => {
     try {
       await api.addToCart({ sessionId, productId, quantity: 1 });
       await loadCart();
       setIsOpen(true);
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
+      throw err;
     }
-  };
+  }, [sessionId, loadCart]);
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
+  const updateQuantity = useCallback(async (id: string, quantity: number) => {
     try {
-      await api.updateCartItem(itemId, quantity);
+      await api.updateCartItem(id, quantity);
       await loadCart();
-    } catch (error) {
-      console.error("Failed to update cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to update quantity:", err);
+      throw err;
     }
-  };
+  }, [loadCart]);
 
-  const removeFromCart = async (itemId: string) => {
+  const removeFromCart = useCallback(async (id: string) => {
     try {
-      await api.removeFromCart(itemId);
+      await api.removeFromCart(id);
       await loadCart();
-    } catch (error) {
-      console.error("Failed to remove from cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to remove from cart:", err);
+      throw err;
     }
-  };
+  }, [loadCart]);
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     try {
       await api.clearCart(sessionId);
       setItems([]);
       writeCartCache([]);
-    } catch (error) {
-      console.error("Failed to clear cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to clear cart:", err);
+      throw err;
     }
-  };
+  }, [sessionId, writeCartCache]);
 
-  const total = items.reduce((sum, item) => sum + parseFloat(item.product.price) * item.quantity, 0);
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = useMemo(() => 
+    items.reduce((sum, i) => sum + parseFloat(i.product.price) * i.quantity, 0), 
+  [items]);
 
-  const value: CartContextType = {
+  const itemCount = useMemo(() => 
+    items.reduce((sum, i) => sum + i.quantity, 0), 
+  [items]);
+
+  const value = useMemo(() => ({
     items,
     addToCart,
     updateQuantity,
@@ -153,8 +134,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     total,
     itemCount,
     isOpen,
-    setIsOpen,
-  };
+    setIsOpen
+  }), [items, addToCart, updateQuantity, removeFromCart, clearCart, total, itemCount, isOpen]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
 }

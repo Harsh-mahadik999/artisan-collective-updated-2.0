@@ -1,12 +1,17 @@
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingBag, Menu, LogOut, Heart } from "lucide-react";
+import { LogOut, Menu, Search, ShoppingBag, Heart } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+
+const USER_TYPE_LABEL: Record<string, string> = {
+  artisan: "Artisan",
+  customer: "Buyer",
+};
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -22,37 +27,42 @@ export default function Navbar() {
     { href: "/ai-storytelling", label: t("nav.aitools") },
   ];
 
+  const isActive = (href: string) => location === href;
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm smooth-transition">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" data-testid="link-home">
-              <h1 className="text-xl font-serif font-bold text-primary hover:text-primary/80 smooth-transition cursor-pointer hover:scale-110 active:scale-95">
-                Artisan Collective
-              </h1>
-            </Link>
-          </div>
+          <Link href="/" data-testid="link-home">
+            <h1 className="text-xl font-serif font-bold text-primary hover:text-primary/80 smooth-transition cursor-pointer hover:scale-110 active:scale-95">
+              Artisan Collective
+            </h1>
+          </Link>
 
           <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} data-testid={`link-${item.href}`}>
-                <span className={`px-3 py-2 rounded-lg text-foreground smooth-transition cursor-pointer relative group transition-all ${
-                  location === item.href ? 'text-primary font-medium bg-primary/5' : 'hover:text-primary hover:bg-accent/10 active:scale-95'
-                }`}>
-                  {item.label}
-                  <span className={`absolute bottom-0 left-0 h-0.5 bg-primary smooth-transition ${
-                    location === item.href ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`}></span>
+            {navItems.map(({ href, label }) => (
+              <Link key={href} href={href} data-testid={`link-${href}`}>
+                <span
+                  className={`px-3 py-2 rounded-lg text-foreground smooth-transition cursor-pointer relative group transition-all ${
+                    isActive(href)
+                      ? "text-primary font-medium bg-primary/5"
+                      : "hover:text-primary hover:bg-accent/10 active:scale-95"
+                  }`}
+                >
+                  {label}
+                  <span
+                    className={`absolute bottom-0 left-0 h-0.5 bg-primary smooth-transition ${
+                      isActive(href) ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
                 </span>
               </Link>
             ))}
           </div>
 
           <div className="flex items-center space-x-3">
-
             <LanguageSwitcher />
-
             <Button
               variant="ghost"
               size="icon"
@@ -82,7 +92,10 @@ export default function Navbar() {
             >
               <ShoppingBag className="h-5 w-5 group-hover:scale-125 smooth-transition" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse" data-testid="text-cart-count">
+                <span
+                  className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse"
+                  data-testid="text-cart-count"
+                >
                   {itemCount}
                 </span>
               )}
@@ -95,15 +108,15 @@ export default function Navbar() {
                     <span className="text-muted-foreground">{t("nav.welcome")}, </span>
                     <span className="font-semibold text-foreground">{userName}</span>
                     <span className="text-xs ml-2 px-2 py-1 bg-primary/20 text-primary rounded-full inline-block">
-                      {userType === "artisan" ? "🛠️ Artisan" : "🛍️ Buyer"}
+                      {USER_TYPE_LABEL[userType ?? "customer"]}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => logout()}
-                    className="text-foreground hover:text-destructive ml-2 smooth-transition active:scale-95 group"
+                    onClick={logout}
                     data-testid="button-logout"
+                    className="text-foreground hover:text-destructive ml-2 smooth-transition active:scale-95 group"
                   >
                     <LogOut className="h-4 w-4 mr-1 group-hover:scale-125 smooth-transition" />
                     {t("nav.logout")}
@@ -122,10 +135,7 @@ export default function Navbar() {
                     </Button>
                   </Link>
                   <Link href="/auth">
-                    <Button
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg hover:scale-110 smooth-transition active:scale-95"
-                      data-testid="button-join"
-                    >
+                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg hover:scale-110 smooth-transition active:scale-95" data-testid="button-join">
                       {t("nav.join")}
                     </Button>
                   </Link>
@@ -138,31 +148,29 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden text-foreground hover:text-primary hover:bg-accent/20 smooth-transition active:scale-95"
                   data-testid="button-mobile-menu"
+                  className="md:hidden text-foreground hover:text-primary hover:bg-accent/20 smooth-transition active:scale-95"
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] animate-slide-in-right">
                 <div className="flex flex-col space-y-6 mt-6">
-                  {navItems.map((item, index) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      data-testid={`mobile-link-${item.href}`}
-                    >
-                      <span className={`text-lg font-medium text-foreground smooth-transition cursor-pointer block py-2 px-3 rounded-lg animate-slide-in-left ${
-                        location === item.href ? 'text-primary bg-primary/5 font-semibold' : 'hover:text-primary hover:bg-accent/10 active:scale-95'
-                      }`} style={{ animationDelay: `${index * 0.1}s` }}>
-                        {item.label}
+                  {navItems.map(({ href, label }, index) => (
+                    <Link key={href} href={href} onClick={closeMobileMenu} data-testid={`mobile-link-${href}`}>
+                      <span
+                        className={`text-lg font-medium text-foreground smooth-transition cursor-pointer block py-2 px-3 rounded-lg animate-slide-in-left ${
+                          isActive(href) ? "text-primary bg-primary/5 font-semibold" : "hover:text-primary hover:bg-accent/10 active:scale-95"
+                        }`}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        {label}
                       </span>
                     </Link>
                   ))}
-                  
-                  <Link href="/wishlist" onClick={() => setIsMobileMenuOpen(false)}>
-                    <span className="text-lg font-medium text-foreground smooth-transition cursor-pointer block py-2 px-3 rounded-lg hover:text-primary hover:bg-accent/10 active:scale-95">
+
+                  <Link href="/wishlist" onClick={closeMobileMenu}>
+                    <span className="text-lg font-medium text-foreground smooth-transition cursor-pointer block py-2 px-3 rounded-lg hover:text-primary hover:bg-accent/10 active:scale-95 animate-slide-in-left" style={{ animationDelay: `${navItems.length * 0.1}s` }}>
                       {t("nav.wishlist") || "Wishlist"}
                     </span>
                   </Link>
@@ -175,13 +183,16 @@ export default function Navbar() {
                           <span className="text-muted-foreground">{t("nav.welcome")}, </span>
                           <span className="font-semibold">{userName}</span>
                           <div className="text-xs mt-1 px-2 py-1 bg-primary/20 text-primary rounded w-fit">
-                            {userType === "artisan" ? "🛠️ Artisan" : "🛍️ Buyer"}
+                            {USER_TYPE_LABEL[userType ?? "customer"]}
                           </div>
                         </div>
                         <Button
                           variant="outline"
                           className="w-full smooth-transition active:scale-95"
-                          onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                          onClick={() => {
+                            logout();
+                            closeMobileMenu();
+                          }}
                         >
                           <LogOut className="h-4 w-4 mr-1" />
                           {t("nav.logout")}
@@ -190,20 +201,17 @@ export default function Navbar() {
                     ) : (
                       <>
                         <Link href="/welcome">
-                          <Button variant="outline" className="w-full smooth-transition active:scale-95" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full smooth-transition active:scale-95" onClick={closeMobileMenu}>
                             {t("nav.welcome")}
                           </Button>
                         </Link>
                         <Link href="/customer-login">
-                          <Button variant="outline" className="w-full smooth-transition active:scale-95" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full smooth-transition active:scale-95" onClick={closeMobileMenu}>
                             {t("nav.login")}
                           </Button>
                         </Link>
                         <Link href="/auth">
-                          <Button
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 smooth-transition active:scale-95"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
+                          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 smooth-transition active:scale-95" onClick={closeMobileMenu}>
                             {t("nav.join")}
                           </Button>
                         </Link>

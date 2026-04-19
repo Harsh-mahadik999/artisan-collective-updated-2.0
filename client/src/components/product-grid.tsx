@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { useCart } from "@/context/cart-context";
+
+
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "./product-card";

@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Search, Filter, SlidersHorizontal, ShoppingCart } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCart } from "@/context/cart-context";
+import { FilterState } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +35,7 @@ const categories = [
 ];
 
 export default function Marketplace() {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterState>({
     search: "",
     category: "all",
     priceRange: "all",
@@ -53,6 +55,8 @@ export default function Marketplace() {
     queryKey: ["/api/artisans"],
     queryFn: api.getArtisans,
   });
+
+  const { setIsOpen: setIsCartOpen } = useCart();
 
   const getArtisanName = (artisanId: string) => {
     return artisans?.find((a: any) => a.id === artisanId)?.name || "Unknown Artisan";
