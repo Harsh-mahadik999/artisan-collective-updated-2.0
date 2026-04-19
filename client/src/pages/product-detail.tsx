@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Lightbulb, ShieldCheck, Sparkles, ArrowLeft } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { TrendingUp, TrendingDown, Lightbulb, ShieldCheck, Sparkles, ArrowLeft, Star, MessageSquare } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Review } from "@shared/schema";
 
 const categoryInsight: Record<string, { helpful: string; good: string; innovation: string }> = {
   ceramics: {
@@ -94,6 +99,54 @@ export default function ProductDetail() {
     queryFn: () => api.getProducts(product.category),
     enabled: !!product?.category,
   });
+
+  const { data: reviews, isLoading: reviewsLoading } = useQuery<Review[]>({
+    queryKey: ["/api/reviews", id],
+    queryFn: () => api.getProductReviews(id!),
+    enabled: !!id,
+    refetchInterval: 5000, // Real-time sync for reviews
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [newReview, setNewReview] = useState({
+    rating: 5,
+    userName: "",
+    comment: "",
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: (data: any) => api.createReview(id!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reviews", id] });
+      setNewReview({ rating: 5, userName: "", comment: "" });
+      toast({
+        title: "Review submitted!",
+        description: "Thank you for your feedback.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Submission failed",
+        description: "Please check your input and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReview.userName || !newReview.comment) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide both a name and a comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    reviewMutation.mutate(newReview);
+  };
 
   const price = Number(product?.price || 0);
 
@@ -302,6 +355,118 @@ export default function ProductDetail() {
             </p>
           </CardContent>
         </Card>
+
+        <section className="mt-12 pt-12 border-t border-border">
+          <div className="mb-8">
+            <h2 className="text-2xl font-serif font-bold mb-2">Community Reviews</h2>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center text-yellow-500">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className={`h-5 w-5 ${i < Math.round(Number(product.rating)) ? "fill-current" : ""}`} />
+                ))}
+              </div>
+              <span className="text-xl font-bold">{product.rating} / 5</span>
+              <span className="text-sm text-muted-foreground">Based on {product.reviewCount} reviews</span>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            <div className="space-y-6 flex justify-center lg:justify-start">
+              <Card className="bg-white border-2 border-primary/5 shadow-lg w-full max-w-md">
+                <CardHeader>
+                  <CardTitle className="text-lg">Share Your Experience</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmitReview} className="space-y-5">
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Your Rating</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewReview({ ...newReview, rating: star })}
+                            className="focus:outline-none hover:scale-110 transition-transform p-1 bg-muted/20 rounded-lg hover:bg-muted/40 smooth-transition"
+                          >
+                            <Star
+                              className={`h-7 w-7 ${star <= newReview.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Input
+                        placeholder="Your Name (e.g. Alex M.)"
+                        value={newReview.userName}
+                        onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
+                        className="h-12 bg-background border-border hover:border-primary smooth-transition shadow-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Textarea
+                        placeholder="What do you love about this piece?"
+                        value={newReview.comment}
+                        onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                        className="bg-background min-h-[120px] border-border hover:border-primary smooth-transition shadow-sm"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-bold shadow-xl hover:shadow-primary/20 smooth-transition hover:scale-[1.02]" 
+                      disabled={reviewMutation.isPending}
+                    >
+                      {reviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              {reviewsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                  ))}
+                </div>
+              ) : reviews?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-muted/10 rounded-3xl border-2 border-dashed border-muted-foreground/10 text-center animate-fade-in group">
+                  <div className="p-4 bg-muted/20 rounded-full mb-4 group-hover:scale-110 smooth-transition">
+                    <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">No reviews yet</h3>
+                  <p className="text-muted-foreground max-w-xs mt-2 leading-relaxed">
+                    Be the first to share your experience with this unique artisan piece!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-6">
+                  {reviews?.map((review) => (
+                    <div key={review.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-border/60 hover:shadow-xl hover:border-primary/20 smooth-transition animate-slide-in-up">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="flex gap-0.5 text-yellow-500 mb-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} className={`h-4 w-4 ${i < review.rating ? "fill-current" : ""}`} />
+                            ))}
+                          </div>
+                          <p className="font-bold text-foreground text-lg">{review.userName}</p>
+                        </div>
+                        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+                          {review.createdAt ? format(new Date(review.createdAt), "MMM d, yyyy") : ""}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed italic border-l-4 border-primary/10 pl-4 py-1">
+                        "{review.comment}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         {related.length > 0 && (
           <div className="mt-10">

@@ -62,6 +62,15 @@ export const aiGenerations = pgTable("ai_generations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").references(() => products.id).notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment").notNull(),
+  userName: text("user_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertArtisanSchema = createInsertSchema(artisans).omit({
   id: true,
   createdAt: true,
@@ -87,6 +96,11 @@ export const insertAiGenerationSchema = createInsertSchema(aiGenerations).omit({
   createdAt: true,
 });
 
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Artisan = typeof artisans.$inferSelect;
 export type InsertArtisan = z.infer<typeof insertArtisanSchema>;
 export type Product = typeof products.$inferSelect;
@@ -97,3 +111,5 @@ export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type AiGeneration = typeof aiGenerations.$inferSelect;
 export type InsertAiGeneration = z.infer<typeof insertAiGenerationSchema>;
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;

@@ -24,6 +24,7 @@ export default function ArtisanProfile() {
     queryKey: ["/api/artisans", id, "products"],
     queryFn: () => api.getArtisanProducts(id!),
     enabled: !!id,
+    refetchInterval: 5000, // Poll every 5s for real-time likes
   });
 
   const { data: stories } = useQuery({

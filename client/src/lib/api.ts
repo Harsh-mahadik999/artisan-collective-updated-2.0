@@ -27,6 +27,8 @@ export const api = {
   createProduct: (data: any) => apiRequest("POST", "/api/products", data),
   likeProduct: (id: string) => apiRequest("POST", `/api/products/${id}/like`, {}),
   unlikeProduct: (id: string) => apiRequest("POST", `/api/products/${id}/unlike`, {}),
+  getProductReviews: (id: string) => fetch(`/api/reviews/${id}`).then(res => res.json()),
+  createReview: (id: string, data: any) => apiRequest("POST", `/api/reviews/${id}`, data),
   
   // Stories
   getStories: () => fetch("/api/stories").then(res => res.json()),

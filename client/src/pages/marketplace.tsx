@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Search, Filter, SlidersHorizontal, ShoppingCart } from "lucide-react";
 import { api } from "@/lib/api";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,9 +64,12 @@ export default function Marketplace() {
     const matchesCategory = filters.category === "all" || product.category === filters.category;
     
     let matchesPrice = true;
-    if (filters.priceRange === "under-50") matchesPrice = parseFloat(product.price) < 50;
-    else if (filters.priceRange === "50-100") matchesPrice = parseFloat(product.price) >= 50 && parseFloat(product.price) <= 100;
-    else if (filters.priceRange === "over-100") matchesPrice = parseFloat(product.price) > 100;
+    const price = parseFloat(product.price);
+    if (filters.priceRange === "under-50") matchesPrice = price < 50;
+    else if (filters.priceRange === "50-100") matchesPrice = price >= 50 && price <= 100;
+    else if (filters.priceRange === "100-250") matchesPrice = price > 100 && price <= 250;
+    else if (filters.priceRange === "250-500") matchesPrice = price > 250 && price <= 500;
+    else if (filters.priceRange === "over-500") matchesPrice = price > 500;
 
     return matchesSearch && matchesCategory && matchesPrice;
   }).sort((a: any, b: any) => {
@@ -164,7 +167,9 @@ export default function Marketplace() {
                           <SelectItem value="all">Any Price</SelectItem>
                           <SelectItem value="under-50">Under $50</SelectItem>
                           <SelectItem value="50-100">$50 - $100</SelectItem>
-                          <SelectItem value="over-100">Over $100</SelectItem>
+                          <SelectItem value="100-250">$100 - $250</SelectItem>
+                          <SelectItem value="250-500">$250 - $500</SelectItem>
+                          <SelectItem value="over-500">Over $500</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -175,8 +180,8 @@ export default function Marketplace() {
                         <SelectTrigger className="hover:border-primary">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="newest">Newly Listed</SelectItem>
+                        <SelectContent className="animate-in fade-in slide-in-from-top-1">
+                          <SelectItem value="newest">None (Default)</SelectItem>
                           <SelectItem value="popularity">Most Popular</SelectItem>
                           <SelectItem value="price-low">Price: Low to High</SelectItem>
                           <SelectItem value="price-high">Price: High to Low</SelectItem>

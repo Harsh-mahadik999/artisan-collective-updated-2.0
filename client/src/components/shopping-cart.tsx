@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Minus, ShoppingBag, HeartHandshake, Smile, Meh, Frown, Angry, Sparkles } from "lucide-react";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
