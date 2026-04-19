@@ -193,7 +193,7 @@ You can refer to the following articles on basics of Git and Github and also con
 
 ## 🏅 Attribution
 
-This **CONTRIBUTING.md** was prepared with **❤️** by **Divya Jain** for **GearGuard-The-Ultimate-Maintenance-Tracker** as part of the **NSoC'26 program.**
+This **CONTRIBUTING.md** was prepared with **❤️** by **Krish Dargar @KD2303** for **artisan-collective-updated-2.0** as part of the **NSoC'26 program.**
 
 The structure and recommendations follow **GitHub Open Source Guides** and best practices used in leading open-source repositories.
 
