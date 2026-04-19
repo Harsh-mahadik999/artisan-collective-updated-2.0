@@ -1,13 +1,21 @@
 import "./i18n";
-import { Switch, Route } from "wouter";
-import { useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+import { queryClient } from "./lib/queryClient";
+import { api } from "@/lib/api";
+import { AuthProvider } from "@/context/auth-context";
+import { CartContextType, CartItemWithProduct } from "@/types";
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { createContext, useContext, useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { AuthProvider } from "@/context/auth-context";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import ShoppingCart from "@/components/shopping-cart";
+import BackToTop from "@/components/BackToTop";
+
 import NotFound from "@/pages/not-found";
 import Welcome from "@/pages/welcome";
 import Home from "@/pages/home";
@@ -23,219 +31,162 @@ import CustomerSignup from "@/pages/customer-signup";
 import CustomerLogin from "@/pages/customer-login";
 import ArtisanSignup from "@/pages/artisan-signup";
 import ArtisanLogin from "@/pages/artisan-login";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
-import ShoppingCart from "@/components/shopping-cart";
-import { CartContextType, CartItemWithProduct } from "@/types";
-import { api } from "@/lib/api";
+
+
+// ─── Cart Context ────────────────────────────────────────────────────────────
 
 const CartContext = createContext<CartContextType | null>(null);
-const CART_SESSION_STORAGE_KEY = "artisan-collective-cart-session";
-const CART_CACHE_STORAGE_KEY = "artisan-collective-cart-cache";
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    console.error("useCart must be used within CartProvider - this might be a timing issue during development");
-    return {
-      items: [],
-      addToCart: async () => {},
-      updateQuantity: async () => {},
-      removeFromCart: async () => {},
-      clearCart: async () => {},
-      total: 0,
-      itemCount: 0,
-      isOpen: false,
-      setIsOpen: () => {},
-    };
-  }
-  return context;
-};
+export function useCart(): CartContextType {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
+}
 
 function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItemWithProduct[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [sessionId] = useState(() => {
-    if (typeof window === "undefined") return "guest-session";
-    const existing = window.localStorage.getItem(CART_SESSION_STORAGE_KEY);
-    if (existing) return existing;
-    const generated = `guest-${crypto.randomUUID()}`;
-    window.localStorage.setItem(CART_SESSION_STORAGE_KEY, generated);
-    return generated;
-  });
 
-  const writeCartCache = (nextItems: CartItemWithProduct[]) => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(CART_CACHE_STORAGE_KEY, JSON.stringify(nextItems));
-  };
+  // Stable session ID — created once, never re-computed on re-renders
+  const sessionId = useRef(
+    localStorage.getItem("cart-session") ?? crypto.randomUUID()
+  ).current;
 
-  const readCartCache = (): CartItemWithProduct[] => {
-    if (typeof window === "undefined") return [];
-    const raw = window.localStorage.getItem(CART_CACHE_STORAGE_KEY);
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed as CartItemWithProduct[];
-    } catch {
-      return [];
-    }
-  };
-
-  const hydrateWithProducts = async (cartItems: Array<{ id: string; productId: string; quantity: number }>) => {
-    return Promise.all(
-      cartItems.map(async (item) => {
-        const product = await api.getProduct(item.productId);
-        const artisan = await api.getArtisan(product.artisanId);
-        return {
-          ...item,
-          product: {
-            ...product,
-            artisanName: artisan.name,
-          },
-        };
-      })
-    );
-  };
-
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     try {
       const cartItems = await api.getCartItems(sessionId);
-      let itemsWithProducts = await hydrateWithProducts(cartItems);
 
-      if (itemsWithProducts.length === 0) {
-        const cachedItems = readCartCache();
-        if (cachedItems.length > 0) {
-          for (const cachedItem of cachedItems) {
-            await api.addToCart({
-              sessionId,
-              productId: cachedItem.productId,
-              quantity: Math.max(1, Number(cachedItem.quantity) || 1),
-            });
-          }
-          const restoredItems = await api.getCartItems(sessionId);
-          itemsWithProducts = await hydrateWithProducts(restoredItems);
-        }
-      }
+      const fullItems = await Promise.all(
+        cartItems.map(async (item: any) => {
+          const product = await api.getProduct(item.productId);
+          const artisan = await api.getArtisan(product.artisanId);
+          return { ...item, product: { ...product, artisanName: artisan.name } };
+        })
+      );
 
-      setItems(itemsWithProducts);
-      writeCartCache(itemsWithProducts);
-    } catch (error) {
-      console.error("Failed to load cart:", error);
-      const cachedItems = readCartCache();
-      if (cachedItems.length > 0) {
-        setItems(cachedItems);
-      }
+      setItems(fullItems);
+    } catch (err) {
+      console.error("Failed to load cart:", err);
     }
-  };
+  }, [sessionId]);
 
   useEffect(() => {
-    const cachedItems = readCartCache();
-    if (cachedItems.length > 0) {
-      setItems(cachedItems);
-    }
     loadCart();
-  }, []);
+  }, [loadCart]);
 
-  const addToCart = async (productId: string) => {
+  const addToCart = useCallback(async (productId: string) => {
     try {
       await api.addToCart({ sessionId, productId, quantity: 1 });
       await loadCart();
       setIsOpen(true);
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
     }
-  };
+  }, [sessionId, loadCart]);
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
+  const updateQuantity = useCallback(async (id: string, quantity: number) => {
     try {
-      await api.updateCartItem(itemId, quantity);
+      await api.updateCartItem(id, quantity);
       await loadCart();
-    } catch (error) {
-      console.error("Failed to update cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to update quantity:", err);
     }
-  };
+  }, [loadCart]);
 
-  const removeFromCart = async (itemId: string) => {
+  const removeFromCart = useCallback(async (id: string) => {
     try {
-      await api.removeFromCart(itemId);
+      await api.removeFromCart(id);
       await loadCart();
-    } catch (error) {
-      console.error("Failed to remove from cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to remove item:", err);
     }
-  };
+  }, [loadCart]);
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     try {
       await api.clearCart(sessionId);
       setItems([]);
-      writeCartCache([]);
-    } catch (error) {
-      console.error("Failed to clear cart:", error);
-      throw error;
+    } catch (err) {
+      console.error("Failed to clear cart:", err);
     }
-  };
+  }, [sessionId]);
 
-  const total = items.reduce((sum, item) => sum + parseFloat(item.product.price) * item.quantity, 0);
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = useMemo(
+    () => items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0),
+    [items]
+  );
 
-  const value: CartContextType = {
-    items,
-    addToCart,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    total,
-    itemCount,
-    isOpen,
-    setIsOpen,
-  };
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{ items, addToCart, updateQuantity, removeFromCart, clearCart, total, itemCount, isOpen, setIsOpen }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 }
+
+
+// ─── Router ──────────────────────────────────────────────────────────────────
+
+const AUTH_ROUTES = [
+  { path: "/welcome",         component: Welcome         },
+  { path: "/auth",            component: AuthLanding     },
+  { path: "/customer-signup", component: CustomerSignup  },
+  { path: "/customer-login",  component: CustomerLogin   },
+  { path: "/artisan-signup",  component: ArtisanSignup   },
+  { path: "/artisan-login",   component: ArtisanLogin    },
+];
+
+const MAIN_ROUTES = [
+  { path: "/",                       component: Home           },
+  { path: "/marketplace",            component: Marketplace    },
+  { path: "/products/:id",           component: ProductDetail  },
+  { path: "/artisans",               component: Artisans       },
+  { path: "/artisans/:id",           component: ArtisanProfile },
+  { path: "/ai-storytelling",        component: AiStorytelling },
+  { path: "/community/stories/:id",  component: StoryDetail    },
+  { path: "/community",              component: Community      },
+];
 
 function Router() {
   const [location] = useLocation();
 
   return (
     <Switch>
-      <Route path="/welcome" component={Welcome} />
-      <Route path="/auth" component={AuthLanding} />
-      <Route path="/customer-signup" component={CustomerSignup} />
-      <Route path="/customer-login" component={CustomerLogin} />
-      <Route path="/artisan-signup" component={ArtisanSignup} />
-      <Route path="/artisan-login" component={ArtisanLogin} />
+      {AUTH_ROUTES.map(({ path, component }) => (
+        <Route key={path} path={path} component={component} />
+      ))}
 
       <Route>
         {() => (
           <div className="min-h-screen bg-background">
             <Navbar />
-            <AnimatePresence mode="wait" initial={false}>
+
+            <AnimatePresence mode="wait">
               <motion.main
                 key={location}
-                initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
-                transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
                 <Switch>
-                  <Route path="/" component={Home} />
-                  <Route path="/marketplace" component={Marketplace} />
-                  <Route path="/products/:id" component={ProductDetail} />
-                  <Route path="/artisans" component={Artisans} />
-                  <Route path="/artisans/:id" component={ArtisanProfile} />
-                  <Route path="/ai-storytelling" component={AiStorytelling} />
-                  <Route path="/community/stories/:id" component={StoryDetail} />
-                  <Route path="/community" component={Community} />
+                  {MAIN_ROUTES.map(({ path, component }) => (
+                    <Route key={path} path={path} component={component} />
+                  ))}
                   <Route component={NotFound} />
                 </Switch>
               </motion.main>
             </AnimatePresence>
+
             <Footer />
             <ShoppingCart />
+            <BackToTop />
           </div>
         )}
       </Route>
@@ -243,7 +194,10 @@ function Router() {
   );
 }
 
-function App() {
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -257,5 +211,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
