@@ -66,11 +66,6 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
   };
   
-  // Only use reusePort on non-Windows platforms
-  if (process.platform !== 'win32') {
-    listenOptions.reusePort = true;
-  }
-  
   server.listen(listenOptions, () => {
     log(`serving on port ${port}`);
   });

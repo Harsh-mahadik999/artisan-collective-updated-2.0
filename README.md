@@ -1,5 +1,10 @@
 # Artisan Collective ( NSoC'26 ) ( Project Kernels )
 
+## hellp needed :)
+all rules are down there ( feel free to get to know ) ##
+## white do anything needed video drive link beofre and after and or ss okay to give marks and tag properly ##
+------------------------------------------------------------------------------------
+
 Artisan Collective is a full-stack web platform designed to connect artisans, creators, and customers in one digital ecosystem. It combines marketplace capabilities, creator storytelling, and AI-assisted experiences to support local craftsmanship at scale.
 
 ## Table of Contents
@@ -152,3 +157,33 @@ npm run build
 
 ---
 This project demonstrates a practical blend of technology, social impact, and creative entrepreneurship. Artisan Collective is not just an online store; it is a digital foundation for artisan-led growth.
+## 🤝 Contributing (NSoC 2026)
+
+* Check issues and request assignment
+* Do NOT create PR without assignment
+* Mention `NSoC'26` in every PR
+* Follow `CONTRIBUTING.md`
+
+---
+
+## 🏷️ Issue Labels
+
+* **level1 — 3 pts** → Beginner
+* **level2 — 5 pts** → Intermediate
+* **level3 — 10 pts** → Advanced
+
+---
+
+## ⚠️ Contribution Rules
+
+* PR without assignment → ❌ Rejected
+* Missing `NSoC'26` → ⚠️ Update required
+* Low-quality PR → ❌ Not merged
+
+---
+
+## ⭐ Support
+
+If you like this project, give it a ⭐ and contribute!
+
+---

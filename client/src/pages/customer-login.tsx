@@ -7,16 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/context/auth-context";
 
 export default function CustomerLogin() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState<"email" | "password" | "success">("email");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleEmailSubmit = async () => {
     if (!email) {
@@ -36,6 +39,10 @@ export default function CustomerLogin() {
   };
 
   const handleLogin = async () => {
+    if (!name.trim()) {
+      toast({ title: "Error", description: "Please enter your name", variant: "destructive" });
+      return;
+    }
     if (!password) {
       toast({ title: "Error", description: "Please enter your password", variant: "destructive" });
       return;
@@ -44,6 +51,7 @@ export default function CustomerLogin() {
     setLoading(true);
     try {
       setTimeout(() => {
+        login("customer", name.trim());
         setStep("success");
         toast({ title: "Welcome back!", description: "Login successful" });
       }, 1000);
@@ -112,6 +120,19 @@ export default function CustomerLogin() {
               <div className="space-y-4">
                 <div className="p-4 bg-secondary/10 rounded-lg">
                   <p className="text-sm text-muted-foreground">Email: <span className="font-semibold text-foreground">{email}</span></p>
+                </div>
+
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium">Your Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="What should we call you?"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-2"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div>

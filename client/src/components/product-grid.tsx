@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Star, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import { Link } from "wouter";
 import { api } from "@/lib/api";
 import { useCart } from "@/context/cart-context";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
+import { ProductCard } from "./product-card";
 
 const categories = [
   { id: "all", label: "All" },
@@ -20,9 +20,6 @@ const categories = [
 
 export default function ProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
-  const { addToCart } = useCart();
-  const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["/api/products/featured"],
@@ -33,31 +30,6 @@ export default function ProductGrid() {
     queryKey: ["/api/artisans"],
     queryFn: api.getArtisans,
   });
-
-  const toggleWishlist = (productId: string) => {
-    const newWishlist = new Set(wishlist);
-    if (newWishlist.has(productId)) {
-      newWishlist.delete(productId);
-      toast({ title: "Removed from wishlist" });
-    } else {
-      newWishlist.add(productId);
-      toast({ title: "Added to wishlist" });
-    }
-    setWishlist(newWishlist);
-  };
-
-  const handleAddToCart = async (productId: string, productName: string) => {
-    try {
-      await addToCart(productId);
-      toast({ title: `${productName} added to cart` });
-    } catch {
-      toast({
-        title: "Could not add to cart",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const filteredProducts = products?.filter((product: any) => 
     selectedCategory === "all" || product.category === selectedCategory
@@ -134,84 +106,12 @@ export default function ProductGrid() {
 
         <div className="product-grid">
           {filteredProducts.map((product: any, index: number) => (
-            <Card 
+            <ProductCard 
               key={product.id} 
-              className="overflow-hidden border border-border group shadow-md hover:shadow-2xl smooth-transition animate-fade-in-scale"
-              style={{ animationDelay: `${(index % 6) * 0.08}s` }}
-              data-testid={`card-product-${product.id}`}
-            >
-              <div className="relative bg-muted overflow-hidden">
-                <img 
-                  src={getProductImage(product)} 
-                  alt={product.name} 
-                  className="w-full h-48 object-cover group-hover:scale-110 smooth-transition duration-500"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    img.onerror = null;
-                    img.src = getCategoryFallbackImage(product.category, product.id || product.name, 1);
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 smooth-transition"></div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => toggleWishlist(product.id)}
-                  className="absolute top-3 right-3 bg-white/90 hover:bg-white shadow-md hover:shadow-lg smooth-transition hover:scale-110"
-                  data-testid={`button-wishlist-${product.id}`}
-                >
-                  <Heart 
-                    className={`h-4 w-4 smooth-transition ${wishlist.has(product.id) ? 'fill-primary text-primary animate-pulse' : 'text-muted-foreground'}`} 
-                  />
-                </Button>
-              </div>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-foreground line-clamp-1" data-testid={`text-product-name-${product.id}`}>
-                    {product.name}
-                  </h3>
-                </div>
-                <p className="text-sm text-muted-foreground font-medium mb-3" data-testid={`text-product-artisan-${product.id}`}>
-                  by {getArtisanName(product.artisanId)}
-                </p>
-                <p className="text-muted-foreground mb-4 text-sm line-clamp-2 leading-relaxed" data-testid={`text-product-description-${product.id}`}>
-                  {product.description}
-                </p>
-                <div className="flex items-center justify-between pt-4 border-t border-border gap-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      ${product.price}
-                    </span>
-                    <div className="flex items-center space-x-1 bg-yellow-50 px-2 py-0.5 rounded-full">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-medium text-yellow-700" data-testid={`text-product-rating-${product.id}`}>
-                        {product.rating}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/products/${product.id}`}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="hover:border-primary hover:text-primary"
-                        data-testid={`button-view-product-${product.id}`}
-                      >
-                        View
-                      </Button>
-                    </Link>
-                    <Button 
-                      size="sm"
-                      onClick={() => handleAddToCart(product.id, product.name)}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg smooth-transition hover:scale-105"
-                      data-testid={`button-add-to-cart-${product.id}`}
-                    >
-                      <ShoppingCart className="mr-1 h-3 w-3" />
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              product={product} 
+              index={index} 
+              artisanName={getArtisanName(product.artisanId)} 
+            />
           ))}
         </div>
 
