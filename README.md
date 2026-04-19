@@ -1,5 +1,11 @@
 # Artisan Collective ( NSoC'26 ) ( Project Kernels )
 
+## hellp needed :)
+i reuest to all save in other branches make new branchese so other are 
+working in the project not get messed  
+Other also not get messed Or any other can say to me that its do have in same branch or make new branch for it can some one make new iiusee for the readme.md file 
+to comment belive beacause i want to make sure all should get point wisley and other one project is ther you visit also 
+
 Artisan Collective is a full-stack web platform designed to connect artisans, creators, and customers in one digital ecosystem. It combines marketplace capabilities, creator storytelling, and AI-assisted experiences to support local craftsmanship at scale.
 
 ## Table of Contents
