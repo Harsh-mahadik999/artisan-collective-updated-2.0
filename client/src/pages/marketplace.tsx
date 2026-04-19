@@ -111,8 +111,8 @@ export default function Marketplace() {
             <p className="text-lg text-muted-foreground">Discover unique handmade treasures from master craftspeople around the world.</p>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-4 max-w-5xl mx-auto animate-fade-in delay-100">
-            <div className="md:col-span-2 relative group">
+          <div className="flex flex-col md:flex-row gap-4 max-w-5xl mx-auto animate-fade-in delay-100">
+            <div className="flex-1 relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 group-hover:text-primary smooth-transition" />
               <Input 
                 placeholder="Search for products or master artisans..." 
@@ -123,27 +123,10 @@ export default function Marketplace() {
               />
             </div>
             
-            <div className="hidden md:block">
-              <Select value={filters.category} onValueChange={(val) => setFilters({ ...filters, category: val })}>
-                <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-border hover:border-primary smooth-transition shadow-sm">
-                  <div className="flex items-center">
-                    <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Category" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex items-center gap-2">
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="h-12 w-full bg-white/80 backdrop-blur-sm border-border hover:border-primary smooth-transition shadow-sm group">
+                  <Button variant="outline" className="h-12 w-full md:w-[180px] bg-white/80 backdrop-blur-sm border-border hover:border-primary smooth-transition shadow-sm group font-medium">
                     <SlidersHorizontal className="mr-2 h-4 w-4 group-hover:scale-110 smooth-transition" />
                     Filters
                     {Object.values(filters).filter(v => v !== "all" && v !== "" && v !== "newest").length > 0 && (
