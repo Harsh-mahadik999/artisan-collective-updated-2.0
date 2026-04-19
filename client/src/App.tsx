@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "@/context/auth-context";
-import { CartProvider } from "@/context/Cart-content";
+import { CartProvider } from "@/context/cart-context";
 
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";

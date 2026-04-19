@@ -2,8 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api } from "@/lib/api";
 import { CartContextType, CartItemWithProduct } from "@/types";
 
-// ─── Context ─────────────────────────────────────────────────────────────────
-
 const CartContext = createContext<CartContextType | null>(null);
 
 export function useCart(): CartContextType {
@@ -11,8 +9,6 @@ export function useCart(): CartContextType {
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
 }
-
-// ─── Provider ────────────────────────────────────────────────────────────────
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items,  setItems]  = useState<CartItemWithProduct[]>([]);
@@ -45,44 +41,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       await api.addToCart({ sessionId, productId, quantity: 1 });
       await loadCart();
       setIsOpen(true);
-    } catch (err) { console.error("Failed to add to cart:", err); }
+    } catch (err) { console.error(err); }
   }, [sessionId, loadCart]);
 
   const updateQuantity = useCallback(async (id: string, quantity: number) => {
     try {
       await api.updateCartItem(id, quantity);
       await loadCart();
-    } catch (err) { console.error("Failed to update quantity:", err); }
+    } catch (err) { console.error(err); }
   }, [loadCart]);
 
   const removeFromCart = useCallback(async (id: string) => {
     try {
       await api.removeFromCart(id);
       await loadCart();
-    } catch (err) { console.error("Failed to remove item:", err); }
+    } catch (err) { console.error(err); }
   }, [loadCart]);
 
   const clearCart = useCallback(async () => {
     try {
       await api.clearCart(sessionId);
       setItems([]);
-    } catch (err) { console.error("Failed to clear cart:", err); }
+    } catch (err) { console.error(err); }
   }, [sessionId]);
 
-  const total = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0),
-    [items]
-  );
-
-  const itemCount = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items]
-  );
+  const total    = useMemo(() => items.reduce((sum, i) => sum + Number(i.product.price) * i.quantity, 0), [items]);
+  const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
 
   return (
-    <CartContext.Provider
-      value={{ items, addToCart, updateQuantity, removeFromCart, clearCart, total, itemCount, isOpen, setIsOpen }}
-    >
+    <CartContext.Provider value={{ items, addToCart, updateQuantity, removeFromCart, clearCart, total, itemCount, isOpen, setIsOpen }}>
       {children}
     </CartContext.Provider>
   );
