@@ -21,6 +21,8 @@ export interface IStorage {
   getFeaturedProducts(): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
+  likeProduct(id: string): Promise<Product | undefined>;
+  unlikeProduct(id: string): Promise<Product | undefined>;
   
   // Stories
   getStory(id: string): Promise<Story | undefined>;
@@ -773,7 +775,7 @@ export class MemStorage implements IStorage {
       },
     ];
 
-    products.forEach(product => this.products.set(product.id, product as Product));
+    products.forEach(product => this.products.set(product.id, { ...product, likes: 0 } as Product));
 
     // Seed stories (3 stories for each Browse Category type)
     const stories = [
@@ -971,7 +973,8 @@ export class MemStorage implements IStorage {
       inStock: insertProduct.inStock !== undefined ? insertProduct.inStock : true,
       featured: insertProduct.featured !== undefined ? insertProduct.featured : false,
       rating: insertProduct.rating || "0",
-      reviewCount: insertProduct.reviewCount || 0
+      reviewCount: insertProduct.reviewCount || 0,
+      likes: 0
     };
     this.products.set(id, product);
     return product;
@@ -982,6 +985,30 @@ export class MemStorage implements IStorage {
     if (!product) return undefined;
     
     const updatedProduct = { ...product, ...updates };
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async likeProduct(id: string): Promise<Product | undefined> {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+
+    const updatedProduct = { 
+      ...product, 
+      likes: (product.likes || 0) + 1 
+    };
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async unlikeProduct(id: string): Promise<Product | undefined> {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+
+    const updatedProduct = { 
+      ...product, 
+      likes: Math.max(0, (product.likes || 0) - 1) 
+    };
     this.products.set(id, updatedProduct);
     return updatedProduct;
   }

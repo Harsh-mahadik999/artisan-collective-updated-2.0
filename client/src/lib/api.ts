@@ -21,6 +21,8 @@ export const api = {
   getProduct: (id: string) => fetch(`/api/products/${id}`).then(res => res.json()),
   getArtisanProducts: (artisanId: string) => fetch(`/api/artisans/${artisanId}/products`).then(res => res.json()),
   createProduct: (data: any) => apiRequest("POST", "/api/products", data),
+  likeProduct: (id: string) => apiRequest("POST", `/api/products/${id}/like`, {}),
+  unlikeProduct: (id: string) => apiRequest("POST", `/api/products/${id}/unlike`, {}),
   
   // Stories
   getStories: () => fetch("/api/stories").then(res => res.json()),

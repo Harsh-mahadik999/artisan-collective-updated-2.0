@@ -117,6 +117,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create product" });
     }
   });
+  
+  app.post("/api/products/:id/like", async (req, res) => {
+    try {
+      const product = await storage.likeProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to like product" });
+    }
+  });
+
+  app.post("/api/products/:id/unlike", async (req, res) => {
+    try {
+      const product = await storage.unlikeProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to unlike product" });
+    }
+  });
 
   // Story routes
   app.get("/api/stories", async (req, res) => {
