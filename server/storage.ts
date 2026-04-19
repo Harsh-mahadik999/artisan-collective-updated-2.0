@@ -1019,6 +1019,17 @@ export class MemStorage implements IStorage {
   }
 
   async addToCart(insertItem: InsertCartItem): Promise<CartItem> {
+    // Check if this product already exists in the session cart
+    const existing = Array.from(this.cartItems.values()).find(
+      (item) => item.sessionId === insertItem.sessionId && item.productId === insertItem.productId
+    );
+
+    if (existing) {
+      const updated = { ...existing, quantity: existing.quantity + (insertItem.quantity || 1) };
+      this.cartItems.set(existing.id, updated);
+      return updated;
+    }
+
     const id = randomUUID();
     const item: CartItem = { 
       ...insertItem, 

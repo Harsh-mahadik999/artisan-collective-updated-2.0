@@ -3,7 +3,7 @@ import { Heart, Star, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

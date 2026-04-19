@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Search, ShoppingBag, Menu, X, Home, LogOut } from "lucide-react";
 import { useState } from "react";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
