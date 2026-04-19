@@ -1,7 +1,5 @@
 import { createContext, useContext, useState } from "react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type UserType = "artisan" | "customer";
 
 interface AuthContextType {
@@ -12,8 +10,6 @@ interface AuthContextType {
   logout:     () => void;
 }
 
-// ─── Context ─────────────────────────────────────────────────────────────────
-
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function useAuth(): AuthContextType {
@@ -22,24 +18,16 @@ export function useAuth(): AuthContextType {
   return ctx;
 }
 
-// ─── Provider ────────────────────────────────────────────────────────────────
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType,   setUserType]   = useState<UserType | null>(null);
-  const [userName,   setUserName]   = useState<string | null>(null);
-
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem("auth_logged_in") === "true";
   });
-  const [userType, setUserType] = useState<"artisan" | "customer" | null>(() => {
-    return (localStorage.getItem("auth_user_type") as "artisan" | "customer") || null;
+  const [userType, setUserType] = useState<UserType | null>(() => {
+    return (localStorage.getItem("auth_user_type") as UserType) || null;
   });
   const [userName, setUserName] = useState<string | null>(() => {
     return localStorage.getItem("auth_user_name") || null;
   });
-
 
   const login = (type: UserType, name: string) => {
     setIsLoggedIn(true);
