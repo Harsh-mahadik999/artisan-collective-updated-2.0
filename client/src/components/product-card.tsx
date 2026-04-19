@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { getCategoryFallbackImage, getProductImage } from "@/lib/product-image-utils";
 import { Product } from "@shared/schema";
 import { useState, useEffect } from "react";

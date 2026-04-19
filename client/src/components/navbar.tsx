@@ -1,9 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { LogOut, Menu, Search, ShoppingBag } from "lucide-react";
 import { useState } from "react";
-import { useCart } from "@/context/cart-context";
 import { useTranslation } from "react-i18next";
-
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
