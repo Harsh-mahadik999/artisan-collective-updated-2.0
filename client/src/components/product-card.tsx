@@ -44,18 +44,16 @@ export function ProductCard({ product, index = 0, artisanName }: ProductCardProp
       queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
       
       const saved = localStorage.getItem("likedProducts");
-      let likedSet = new Set<string>();
-      if (saved) {
-        try {
-          likedSet = new Set(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse likedProducts from localStorage", e);
-        }
+      try {
+        const likedSet = new Set<string>(saved ? JSON.parse(saved) : []);
+        likedSet.add(product.id);
+        localStorage.setItem("likedProducts", JSON.stringify(Array.from(likedSet)));
+        setIsLiked(true);
+      } catch (e) {
+        console.error("Failed to update likedProducts in localStorage", e);
+        // We set local state anyway to ensure UI responsiveness even if persistence fails
+        setIsLiked(true);
       }
-      likedSet.add(product.id);
-      localStorage.setItem("likedProducts", JSON.stringify(Array.from(likedSet)));
-      
-      setIsLiked(true);
       toast({ title: "Product liked!" });
     },
     onError: () => {
@@ -74,18 +72,16 @@ export function ProductCard({ product, index = 0, artisanName }: ProductCardProp
       queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
       
       const saved = localStorage.getItem("likedProducts");
-      let likedSet = new Set<string>();
-      if (saved) {
-        try {
-          likedSet = new Set(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse likedProducts from localStorage", e);
-        }
+      try {
+        const likedSet = new Set<string>(saved ? JSON.parse(saved) : []);
+        likedSet.delete(product.id);
+        localStorage.setItem("likedProducts", JSON.stringify(Array.from(likedSet)));
+        setIsLiked(false);
+      } catch (e) {
+        console.error("Failed to update likedProducts in localStorage", e);
+        // We set local state anyway
+        setIsLiked(false);
       }
-      likedSet.delete(product.id);
-      localStorage.setItem("likedProducts", JSON.stringify(Array.from(likedSet)));
-      
-      setIsLiked(false);
       toast({ title: "Like removed" });
     },
     onError: () => {
