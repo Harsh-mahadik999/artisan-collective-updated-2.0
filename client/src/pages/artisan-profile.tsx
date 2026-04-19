@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Star, Heart, ShoppingCart as ShoppingCartIcon, Award, Calendar, Users } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { useCart } from "@/App";
+import { useCart } from "@/context/cart-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
+import { useCart } from "@/context/cart-context";
 import { FilterState } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
