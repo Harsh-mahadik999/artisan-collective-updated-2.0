@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingBag, Menu, LogOut, Heart } from "lucide-react";
+import { Search, ShoppingBag, Menu, LogOut, Heart, Sparkles } from "lucide-react"; // ✅ added Sparkles
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useCart } from "@/context/cart-context"; // ✅ kept from main
+import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -16,7 +16,7 @@ const USER_TYPE_LABEL: Record<string, string> = {
 export default function Navbar() {
   const { t } = useTranslation();
   const [location] = useLocation();
-  const { itemCount, setIsOpen } = useCart(); // ✅ requires useCart
+  const { itemCount, setIsOpen } = useCart();
   const { isLoggedIn, userType, userName, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -25,6 +25,7 @@ export default function Navbar() {
     { href: "/artisans",        label: t("nav.artisans")    },
     { href: "/community",       label: t("nav.stories")     },
     { href: "/ai-storytelling", label: t("nav.aitools")     },
+    { href: "/vibe-search",     label: "✨ Vibe Search"     }, 
   ];
 
   const isActive        = (href: string) => location === href;
@@ -114,7 +115,6 @@ export default function Navbar() {
                       {USER_TYPE_LABEL[userType ?? "customer"]}
                     </span>
                   </div>
-
                   <Button
                     variant="ghost"
                     size="sm"
