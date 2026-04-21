@@ -2,7 +2,7 @@
 
 ## hellp needed :)
 all rules are down there ( feel free to get to know ) ##
-## white do anything needed video drive link beofre and after and or ss okay to give marks and tag properly ##
+## while do anything needed video drive link beofre and after and or ss okay to give marks and tag properly ##
 ------------------------------------------------------------------------------------
 
 Artisan Collective is a full-stack web platform designed to connect artisans, creators, and customers in one digital ecosystem. It combines marketplace capabilities, creator storytelling, and AI-assisted experiences to support local craftsmanship at scale.
