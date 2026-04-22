@@ -25,7 +25,7 @@ export default function Navbar() {
     { href: "/artisans",        label: t("nav.artisans")    },
     { href: "/community",       label: t("nav.stories")     },
     { href: "/ai-storytelling", label: t("nav.aitools")     },
-    { href: "/vibe-search",     label: "✨ Vibe Search"     }, 
+    { href: "/vibe-search",     label: t("nav.vibeSearch") }, 
   ];
 
   const isActive        = (href: string) => location === href;
@@ -212,3 +212,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

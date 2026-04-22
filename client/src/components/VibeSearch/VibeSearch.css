@@ -1,9 +1,9 @@
-.vibe-search { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+﻿.vibe-search { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
 
 .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
 
 .search-input {
-  flex: 1; padding: 10px 16px; border: 1px solid #ddd;
+  flex: 1; padding: 10px 16px; border: 1px solid hsl(var(--border));
   border-radius: 12px; font-size: 15px; outline: none;
 }
 .search-input:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px rgba(127,119,221,0.12); }
@@ -19,8 +19,8 @@
 .quick-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .pill {
   padding: 5px 14px; border-radius: 99px; font-size: 13px;
-  cursor: pointer; border: 1px solid #ddd; background: #f9f9f9;
-  color: #555; transition: all 0.15s;
+  cursor: pointer; border: 1px solid #ddd; background: hsl(var(--background));
+  color: hsl(var(--foreground)); transition: all 0.15s;
 }
 .pill:hover { background: #EEEDFE; border-color: #AFA9EC; color: #3C3489; }
 
@@ -35,7 +35,7 @@
 .results-count { font-size: 13px; color: #888; font-weight: 500; }
 .sort-select {
   font-size: 13px; padding: 5px 10px; border-radius: 8px;
-  border: 1px solid #ddd; background: white; color: #555;
+  border: 1px solid hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--foreground));
 }
 
 .results-grid {
@@ -53,7 +53,7 @@
   align-items: center; justify-content: center; font-size: 36px;
 }
 .card-body { padding: 10px 12px; }
-.card-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; color: #111; }
+.card-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; color: hsl(var(--foreground)); }
 .card-meta { font-size: 12px; color: #888; margin-bottom: 6px; }
 .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
 .tag {
