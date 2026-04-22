@@ -29,12 +29,9 @@ import CustomerSignup from "@/pages/customer-signup";
 import CustomerLogin  from "@/pages/customer-login";
 import ArtisanSignup  from "@/pages/artisan-signup";
 import ArtisanLogin   from "@/pages/artisan-login";
-
-// ✅ Keep BOTH features
 import Wishlist       from "@/pages/wishlist";
 import Checkout       from "@/pages/checkout";
-
-// ─── Routes ──────────────────────────────────────────────────────────────────
+import VibeSearchPage from "@/pages/vibe-search"; // ✅ NEW
 
 const AUTH_ROUTES = [
   { path: "/welcome",         component: Welcome        },
@@ -43,6 +40,7 @@ const AUTH_ROUTES = [
   { path: "/customer-login",  component: CustomerLogin  },
   { path: "/artisan-signup",  component: ArtisanSignup  },
   { path: "/artisan-login",   component: ArtisanLogin   },
+  { path: "/vibe-search", component: VibeSearchPage },
 ];
 
 const MAIN_ROUTES = [
@@ -54,11 +52,10 @@ const MAIN_ROUTES = [
   { path: "/ai-storytelling",       component: AiStorytelling },
   { path: "/community/stories/:id", component: StoryDetail    },
   { path: "/community",             component: Community      },
-  { path: "/wishlist",              component: Wishlist       }, // ✅ from feature branch
-  { path: "/checkout",              component: Checkout       }, // ✅ from main
+  { path: "/wishlist",              component: Wishlist       },
+  { path: "/checkout",              component: Checkout       },
+  { path: "/vibe-search",           component: VibeSearchPage }, // ✅ NEW
 ];
-
-// ─── Router ──────────────────────────────────────────────────────────────────
 
 function Router() {
   const [location] = useLocation();
@@ -99,7 +96,6 @@ function Router() {
   );
 }
 
-// ✅ Keep only ONE export style
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
