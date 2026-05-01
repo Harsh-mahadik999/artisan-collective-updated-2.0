@@ -52,6 +52,21 @@ This topic is unique because it is not only about selling products. It is about 
 - Artisan Collective optimizes for authenticity, craftsmanship, and long-term brand loyalty.
 - It supports micro-entrepreneurs and local economies, making it socially and economically meaningful.
 
+## Problem Validation
+Despite the rich cultural heritage of handmade crafts, many artisans struggle to sustain their livelihoods in the modern digital economy.
+1. Limited Market Access: A large percentage of rural artisans still rely on local markets or middlemen, which significantly reduces their profit margins and visibility. Many lack direct access to global or even national buyers.
+2. Digital Divide: According to industry reports, a significant portion of small-scale artisans are not digitally equipped, making it difficult for them to onboard and compete on mainstream e-commerce platforms.
+Unfair Pricing & Middlemen Dependency: Traditional supply chains often involve multiple intermediaries, leading to artisans receiving only a fraction of the final product price.
+Limitations of Existing Platforms
+Most large e-commerce platforms are not tailored for artisans, requiring complex onboarding, logistics handling, and marketing efforts.
+High competition and platform fees make it difficult for small creators to stand out.
+Lack of storytelling and personalization reduces the perceived value of handmade products.
+
+![alt text](handicrafts-market-share.png)
+
+
+![alt text](handicrafts-market.webp)
+
 ## Detailed Technology Stack
 
 ### Frontend
