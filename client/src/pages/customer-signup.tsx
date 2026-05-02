@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { Mail, Eye, EyeOff, ArrowRight, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,31 +19,68 @@ export default function CustomerSignup() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+  const [errors, setErrors] = useState({
+    email: "",
+    otp: "",
+    password: "",
+    confirmPassword: "",
+  });
   const { toast } = useToast();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Centralized validation avoids duplicate checks in handlers.
+  const getFieldError = (
+    field: "email" | "otp" | "password" | "confirmPassword",
+    value: string
+  ) => {
+    if (field === "email") {
+      if (!value.trim()) return "Email is required";
+      if (!emailPattern.test(value.trim())) return "Invalid email";
+      return "";
+    }
+    if (field === "otp") {
+      if (!value.trim()) return "Verification code is required";
+      if (value.length !== 6) return "OTP must be 6 digits";
+      return "";
+    }
+    if (field === "password") {
+      if (!value.trim()) return "Password is required";
+      if (value.length < 8) return "Password must be at least 8 characters";
+      return "";
+    }
+    if (field === "confirmPassword") {
+      if (!value.trim()) return "Please confirm password";
+      if (value !== password) return "Passwords don't match";
+      return "";
+    }
+    return "";
+  };
 
   const handleSendOtp = async () => {
-    if (!email) {
+    const emailError = getFieldError("email", email);
+    setErrors((prev) => ({ ...prev, email: emailError }));
+    if (emailError) {
       toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      // Simulate OTP send
-      setTimeout(() => {
-        setStep("otp");
-        setOtpTimer(120);
-        toast({ title: "OTP Sent!", description: `Verification code sent to ${email}` });
-        
-        const interval = setInterval(() => {
-          setOtpTimer(prev => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+      await wait(1000);
+      setStep("otp");
+      setErrors((prev) => ({ ...prev, otp: "" }));
+      setOtpTimer(120);
+      toast({ title: "OTP Sent!", description: `Verification code sent to ${email}` });
+
+      const interval = setInterval(() => {
+        setOtpTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     } finally {
       setLoading(false);
@@ -51,50 +88,53 @@ export default function CustomerSignup() {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp) {
+    const otpError = getFieldError("otp", otp);
+    setErrors((prev) => ({ ...prev, otp: otpError }));
+    if (otpError) {
       toast({ title: "Error", description: "Please enter OTP", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      // Simulate OTP verification
-      setTimeout(() => {
-        setStep("password");
-        toast({ title: "Success!", description: "Email verified. Set your password." });
-      }, 1000);
+      await wait(1000);
+      setStep("password");
+      setErrors((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+      toast({ title: "Success!", description: "Email verified. Set your password." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreatePassword = async () => {
-    if (!password || !confirmPassword) {
-      toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      toast({ title: "Error", description: "Passwords don't match", variant: "destructive" });
-      return;
-    }
+    const nextErrors = {
+      password: getFieldError("password", password),
+      confirmPassword: getFieldError("confirmPassword", confirmPassword),
+    };
+    setErrors((prev) => ({ ...prev, ...nextErrors }));
 
-    if (password.length < 8) {
-      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+    if (nextErrors.password || nextErrors.confirmPassword) {
+      toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      // Simulate account creation
-      setTimeout(() => {
-        setStep("success");
-        toast({ title: "Account Created!", description: "Welcome to ArtisanAlley" });
-      }, 1000);
+      await wait(1000);
+      setStep("success");
+      toast({ title: "Account Created!", description: "Welcome to ArtisanAlley" });
     } finally {
       setLoading(false);
     }
   };
+
+  const isEmailStepValid = email.trim() && !getFieldError("email", email);
+  const isOtpStepValid = otp.length === 6 && !getFieldError("otp", otp);
+  const isPasswordStepValid =
+    password.trim() &&
+    confirmPassword.trim() &&
+    !getFieldError("password", password) &&
+    !getFieldError("confirmPassword", confirmPassword);
 
   return (
     <>
@@ -135,13 +175,18 @@ export default function CustomerSignup() {
                     type="email"
                     placeholder="your@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-2"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({ ...prev, email: getFieldError("email", value) }));
+                    }}
+                    className={`mt-2 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
                 <Button 
                   onClick={handleSendOtp}
-                  disabled={loading}
+                  disabled={loading || !isEmailStepValid}
                   className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 >
                   <Mail className="mr-2 h-4 w-4" />
@@ -165,15 +210,20 @@ export default function CustomerSignup() {
                     id="otp"
                     placeholder="Enter 6-digit code"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                    className="mt-2 text-center text-2xl tracking-widest"
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 6);
+                      setOtp(value);
+                      setErrors((prev) => ({ ...prev, otp: getFieldError("otp", value) }));
+                    }}
+                    className={`mt-2 text-center text-2xl tracking-widest ${errors.otp ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     maxLength={6}
                   />
+                  {errors.otp && <p className="text-red-500 text-sm mt-1">{errors.otp}</p>}
                   <p className="text-xs text-muted-foreground mt-2">We sent a code to {email}</p>
                 </div>
                 <Button 
                   onClick={handleVerifyOtp}
-                  disabled={loading || otp.length !== 6}
+                  disabled={loading || !isOtpStepValid}
                   className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 >
                   {loading ? "Verifying..." : "Verify Code"}
@@ -182,6 +232,7 @@ export default function CustomerSignup() {
                   onClick={() => {
                     setStep("email");
                     setOtp("");
+                    setErrors((prev) => ({ ...prev, otp: "", email: "" }));
                   }}
                   variant="outline"
                   className="w-full"
@@ -202,7 +253,16 @@ export default function CustomerSignup() {
                       type={showPassword ? "text" : "password"}
                       placeholder="At least 8 characters"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPassword(value);
+                        setErrors((prev) => ({
+                          ...prev,
+                          password: getFieldError("password", value),
+                          confirmPassword: confirmPassword ? (confirmPassword === value ? "" : "Passwords don't match") : prev.confirmPassword,
+                        }));
+                      }}
+                      className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                     <button
                       onClick={() => setShowPassword(!showPassword)}
@@ -211,6 +271,7 @@ export default function CustomerSignup() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
 
                 <div>
@@ -221,7 +282,12 @@ export default function CustomerSignup() {
                       type={showConfirm ? "text" : "password"}
                       placeholder="Re-enter password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setConfirmPassword(value);
+                        setErrors((prev) => ({ ...prev, confirmPassword: getFieldError("confirmPassword", value) }));
+                      }}
+                      className={errors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                     <button
                       onClick={() => setShowConfirm(!showConfirm)}
@@ -230,11 +296,12 @@ export default function CustomerSignup() {
                       {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                 </div>
 
                 <Button 
                   onClick={handleCreatePassword}
-                  disabled={loading}
+                  disabled={loading || !isPasswordStepValid}
                   className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 >
                   {loading ? "Creating Account..." : "Create Account"}

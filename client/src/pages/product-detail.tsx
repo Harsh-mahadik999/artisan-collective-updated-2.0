@@ -114,6 +114,7 @@ export default function ProductDetail() {
     userName: "",
     comment: "",
   });
+  const [reviewErrors, setReviewErrors] = useState({ userName: "", comment: "" });
 
   const reviewMutation = useMutation({
     mutationFn: (data: any) => api.createReview(id!, data),
@@ -121,6 +122,7 @@ export default function ProductDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/products", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/reviews", id] });
       setNewReview({ rating: 5, userName: "", comment: "" });
+      setReviewErrors({ userName: "", comment: "" });
       toast({
         title: "Review submitted!",
         description: "Thank you for your feedback.",
@@ -137,7 +139,12 @@ export default function ProductDetail() {
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newReview.userName || !newReview.comment) {
+    const nextErrors = {
+      userName: newReview.userName.trim() ? "" : "Name is required",
+      comment: newReview.comment.trim() ? "" : "Comment is required",
+    };
+    setReviewErrors(nextErrors);
+    if (nextErrors.userName || nextErrors.comment) {
       toast({
         title: "Missing fields",
         description: "Please provide both a name and a comment.",
@@ -147,6 +154,8 @@ export default function ProductDetail() {
     }
     reviewMutation.mutate(newReview);
   };
+
+  const isReviewValid = newReview.userName.trim() && newReview.comment.trim();
 
   const price = Number(product?.price || 0);
 
@@ -399,22 +408,32 @@ export default function ProductDetail() {
                       <Input
                         placeholder="Your Name (e.g. Alex M.)"
                         value={newReview.userName}
-                        onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
-                        className="h-12 bg-background border-border hover:border-primary smooth-transition shadow-sm"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setNewReview({ ...newReview, userName: value });
+                          setReviewErrors((prev) => ({ ...prev, userName: value.trim() ? "" : "Name is required" }));
+                        }}
+                        className={`h-12 bg-background border-border hover:border-primary smooth-transition shadow-sm ${reviewErrors.userName ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                       />
+                      {reviewErrors.userName && <p className="text-red-500 text-sm mt-1">{reviewErrors.userName}</p>}
                     </div>
                     <div className="space-y-1.5">
                       <Textarea
                         placeholder="What do you love about this piece?"
                         value={newReview.comment}
-                        onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-                        className="bg-background min-h-[120px] border-border hover:border-primary smooth-transition shadow-sm"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setNewReview({ ...newReview, comment: value });
+                          setReviewErrors((prev) => ({ ...prev, comment: value.trim() ? "" : "Comment is required" }));
+                        }}
+                        className={`bg-background min-h-[120px] border-border hover:border-primary smooth-transition shadow-sm ${reviewErrors.comment ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                       />
+                      {reviewErrors.comment && <p className="text-red-500 text-sm mt-1">{reviewErrors.comment}</p>}
                     </div>
                     <Button 
                       type="submit" 
                       className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-bold shadow-xl hover:shadow-primary/20 smooth-transition hover:scale-[1.02]" 
-                      disabled={reviewMutation.isPending}
+                      disabled={reviewMutation.isPending || !isReviewValid}
                     >
                       {reviewMutation.isPending ? "Submitting..." : "Submit Review"}
                     </Button>

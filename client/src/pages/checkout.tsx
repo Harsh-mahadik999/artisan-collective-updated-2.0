@@ -31,7 +31,7 @@ const EMPTY_ADDRESS: AddressForm = {
 export default function Checkout() {
   const [, navigate] = useLocation();
   const { items, total, itemCount, removeFromCart, clearCart } = useCart();
-  const { isLoggedIn, userName } = useAuth();
+  const { userName } = useAuth();
   const { toast } = useToast();
 
   const [step, setStep] = useState<Step>("summary");
@@ -39,15 +39,45 @@ export default function Checkout() {
     ...EMPTY_ADDRESS,
     fullName: userName ?? "",
   });
+  const [addressErrors, setAddressErrors] = useState<Record<keyof AddressForm, string>>({
+    fullName: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
   const [orderId] = useState(`ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
+  const [loading, setLoading] = useState(false);
+
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const tax = total * 0.05;
   const grandTotal = total + tax;
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
+  // Field-level validator for realtime error updates.
+  const getAddressFieldError = (field: keyof AddressForm, value: string) => {
+    const trimmed = value.trim();
+    if (field === "addressLine2") return "";
+    if (!trimmed) return "This field is required";
+    if (field === "phone" && !/^\d{10}$/.test(trimmed)) return "Phone number must be 10 digits";
+    if (field === "pincode" && !/^\d{6}$/.test(trimmed)) return "Pincode must be 6 digits";
+    return "";
+  };
+
   const handleAddressChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setAddress((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const field = e.target.name as keyof AddressForm;
+    const rawValue = e.target.value;
+    const value =
+      field === "phone" ? rawValue.replace(/\D/g, "").slice(0, 10) :
+      field === "pincode" ? rawValue.replace(/\D/g, "").slice(0, 6) :
+      rawValue;
+
+    setAddress((prev) => ({ ...prev, [field]: value }));
+    setAddressErrors((prev) => ({ ...prev, [field]: getAddressFieldError(field, value) }));
   };
 
   const isAddressValid = () =>
@@ -56,12 +86,24 @@ export default function Checkout() {
     address.addressLine1.trim() &&
     address.city.trim() &&
     address.state.trim() &&
-    address.pincode.trim();
+    address.pincode.trim() &&
+    !getAddressFieldError("fullName", address.fullName) &&
+    !getAddressFieldError("phone", address.phone) &&
+    !getAddressFieldError("addressLine1", address.addressLine1) &&
+    !getAddressFieldError("city", address.city) &&
+    !getAddressFieldError("state", address.state) &&
+    !getAddressFieldError("pincode", address.pincode);
 
   const handlePlaceOrder = async () => {
-    await clearCart();
-    setStep("confirmed");
-    toast({ title: "Order placed!", description: `Your order ${orderId} is confirmed.` });
+    setLoading(true);
+    try {
+      await wait(1000);
+      await clearCart();
+      setStep("confirmed");
+      toast({ title: "Order placed!", description: `Your order ${orderId} is confirmed.` });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── empty cart guard ───────────────────────────────────────────────────────
@@ -181,15 +223,36 @@ export default function Checkout() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Full Name *</label>
-                    <Input name="fullName" value={address.fullName} onChange={handleAddressChange} placeholder="Your full name" />
+                    <Input
+                      name="fullName"
+                      value={address.fullName}
+                      onChange={handleAddressChange}
+                      placeholder="Your full name"
+                      className={addressErrors.fullName ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.fullName && <p className="text-red-500 text-sm mt-1">{addressErrors.fullName}</p>}
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Phone Number *</label>
-                    <Input name="phone" value={address.phone} onChange={handleAddressChange} placeholder="+91 XXXXX XXXXX" />
+                    <Input
+                      name="phone"
+                      value={address.phone}
+                      onChange={handleAddressChange}
+                      placeholder="10-digit phone number"
+                      className={addressErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.phone && <p className="text-red-500 text-sm mt-1">{addressErrors.phone}</p>}
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Address Line 1 *</label>
-                    <Input name="addressLine1" value={address.addressLine1} onChange={handleAddressChange} placeholder="House / Flat / Street" />
+                    <Input
+                      name="addressLine1"
+                      value={address.addressLine1}
+                      onChange={handleAddressChange}
+                      placeholder="House / Flat / Street"
+                      className={addressErrors.addressLine1 ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.addressLine1 && <p className="text-red-500 text-sm mt-1">{addressErrors.addressLine1}</p>}
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Address Line 2</label>
@@ -197,15 +260,37 @@ export default function Checkout() {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">City *</label>
-                    <Input name="city" value={address.city} onChange={handleAddressChange} placeholder="City" />
+                    <Input
+                      name="city"
+                      value={address.city}
+                      onChange={handleAddressChange}
+                      placeholder="City"
+                      className={addressErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.city && <p className="text-red-500 text-sm mt-1">{addressErrors.city}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">State *</label>
-                    <Input name="state" value={address.state} onChange={handleAddressChange} placeholder="State" />
+                    <Input
+                      name="state"
+                      value={address.state}
+                      onChange={handleAddressChange}
+                      placeholder="State"
+                      className={addressErrors.state ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.state && <p className="text-red-500 text-sm mt-1">{addressErrors.state}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Pincode *</label>
-                    <Input name="pincode" value={address.pincode} onChange={handleAddressChange} placeholder="6-digit pincode" maxLength={6} />
+                    <Input
+                      name="pincode"
+                      value={address.pincode}
+                      onChange={handleAddressChange}
+                      placeholder="6-digit pincode"
+                      maxLength={6}
+                      className={addressErrors.pincode ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {addressErrors.pincode && <p className="text-red-500 text-sm mt-1">{addressErrors.pincode}</p>}
                   </div>
                 </div>
                 <Button className="w-full" disabled={!isAddressValid()} onClick={() => setStep("payment")}>
@@ -234,8 +319,8 @@ export default function Checkout() {
                   <div className="flex justify-between text-muted-foreground"><span>Delivering to</span><span className="font-medium text-foreground">{address.fullName}</span></div>
                   <div className="flex justify-between text-muted-foreground"><span>{address.addressLine1}, {address.city}</span></div>
                 </div>
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={handlePlaceOrder}>
-                  Place Order · ₹{grandTotal.toFixed(2)}
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={handlePlaceOrder} disabled={loading}>
+                  {loading ? "Processing..." : `Place Order · ₹${grandTotal.toFixed(2)}`}
                 </Button>
               </CardContent>
             </Card>
