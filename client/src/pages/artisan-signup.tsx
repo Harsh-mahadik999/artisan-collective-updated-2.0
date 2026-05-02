@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Mail, Lock, Eye, EyeOff, User, Phone, MapPin, Wand2, CheckCircle, Clock } from "lucide-react";
+import { Mail, Eye, EyeOff, Phone, MapPin, Wand2, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +24,20 @@ export default function ArtisanSignup() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+  const [errors, setErrors] = useState({
+    email: "",
+    otp: "",
+    artisanName: "",
+    specialty: "",
+    location: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const { toast } = useToast();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phonePattern = /^\d{10}$/;
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const specialties = [
     "Ceramics & Pottery",
@@ -39,28 +52,89 @@ export default function ArtisanSignup() {
     "Other",
   ];
 
+  // One helper to keep form checks simple and beginner-friendly.
+  const getFieldError = (
+    field: "email" | "otp" | "artisanName" | "specialty" | "location" | "phone" | "password" | "confirmPassword",
+    value: string
+  ) => {
+    if (field === "email") {
+      if (!value.trim()) return "Email is required";
+      if (!emailPattern.test(value.trim())) return "Invalid email";
+      return "";
+    }
+    if (field === "otp") {
+      if (!value.trim()) return "Verification code is required";
+      if (value.length !== 6) return "OTP must be 6 digits";
+      return "";
+    }
+    if (field === "artisanName") return value.trim() ? "" : "Name is required";
+    if (field === "specialty") return value.trim() ? "" : "Specialty is required";
+    if (field === "location") return value.trim() ? "" : "Location is required";
+    if (field === "phone") {
+      if (!value.trim()) return "Phone number is required";
+      if (!phonePattern.test(value.trim())) return "Phone number must be 10 digits";
+      return "";
+    }
+    if (field === "password") {
+      if (!value.trim()) return "Password is required";
+      if (value.length < 8) return "Password must be at least 8 characters";
+      return "";
+    }
+    if (field === "confirmPassword") {
+      if (!value.trim()) return "Please confirm password";
+      if (value !== password) return "Passwords don't match";
+      return "";
+    }
+    return "";
+  };
+
+  const validateEmailStep = () => {
+    const nextError = getFieldError("email", email);
+    setErrors((prev) => ({ ...prev, email: nextError }));
+    return !nextError;
+  };
+
+  const validateOtpStep = () => {
+    const nextError = getFieldError("otp", otp);
+    setErrors((prev) => ({ ...prev, otp: nextError }));
+    return !nextError;
+  };
+
+  const validateProfileStep = () => {
+    const nextErrors = {
+      artisanName: getFieldError("artisanName", artisanName),
+      specialty: getFieldError("specialty", specialty),
+      location: getFieldError("location", location),
+      phone: getFieldError("phone", phone),
+      password: getFieldError("password", password),
+      confirmPassword: getFieldError("confirmPassword", confirmPassword),
+    };
+    setErrors((prev) => ({ ...prev, ...nextErrors }));
+    return Object.values(nextErrors).every((error) => !error);
+  };
+
   const handleSendOtp = async () => {
-    if (!email) {
+    if (!validateEmailStep()) {
       toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        setStep("otp");
-        setOtpTimer(120);
-        toast({ title: "OTP Sent!", description: `Verification code sent to ${email}` });
-        
-        const interval = setInterval(() => {
-          setOtpTimer(prev => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+      await wait(1000);
+      setStep("otp");
+      setErrors((prev) => ({ ...prev, otp: "" }));
+      setOtpTimer(120);
+      toast({ title: "OTP Sent!", description: `Verification code sent to ${email}` });
+
+      const interval = setInterval(() => {
+        setOtpTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     } finally {
       setLoading(false);
@@ -68,48 +142,53 @@ export default function ArtisanSignup() {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp) {
+    if (!validateOtpStep()) {
       toast({ title: "Error", description: "Please enter OTP", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        setStep("profile");
-        toast({ title: "Success!", description: "Email verified. Complete your profile." });
-      }, 1000);
+      await wait(1000);
+      setStep("profile");
+      setErrors((prev) => ({ ...prev, artisanName: "", specialty: "", location: "", phone: "", password: "", confirmPassword: "" }));
+      toast({ title: "Success!", description: "Email verified. Complete your profile." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateProfile = async () => {
-    if (!artisanName || !specialty || !location || !phone || !password) {
+    if (!validateProfileStep()) {
       toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({ title: "Error", description: "Passwords don't match", variant: "destructive" });
-      return;
-    }
-
-    if (password.length < 8) {
-      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        setStep("success");
-        toast({ title: "Welcome Artisan!", description: "Your profile is ready" });
-      }, 1000);
+      await wait(1000);
+      setStep("success");
+      toast({ title: "Welcome Artisan!", description: "Your profile is ready" });
     } finally {
       setLoading(false);
     }
   };
+
+  const isEmailStepValid = email.trim() && !getFieldError("email", email);
+  const isOtpStepValid = otp.length === 6 && !getFieldError("otp", otp);
+  const isProfileStepValid =
+    artisanName.trim() &&
+    specialty.trim() &&
+    location.trim() &&
+    phone.trim() &&
+    password.trim() &&
+    confirmPassword.trim() &&
+    !getFieldError("artisanName", artisanName) &&
+    !getFieldError("specialty", specialty) &&
+    !getFieldError("location", location) &&
+    !getFieldError("phone", phone) &&
+    !getFieldError("password", password) &&
+    !getFieldError("confirmPassword", confirmPassword);
 
   return (
     <>
@@ -138,13 +217,18 @@ export default function ArtisanSignup() {
                     type="email"
                     placeholder="artisan@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-2"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({ ...prev, email: getFieldError("email", value) }));
+                    }}
+                    className={`mt-2 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
                 <Button 
                   onClick={handleSendOtp}
-                  disabled={loading}
+                  disabled={loading || !isEmailStepValid}
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Mail className="mr-2 h-4 w-4" />
@@ -171,15 +255,20 @@ export default function ArtisanSignup() {
                     id="otp"
                     placeholder="Enter 6-digit code"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                    className="mt-2 text-center text-2xl tracking-widest"
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 6);
+                      setOtp(value);
+                      setErrors((prev) => ({ ...prev, otp: getFieldError("otp", value) }));
+                    }}
+                    className={`mt-2 text-center text-2xl tracking-widest ${errors.otp ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     maxLength={6}
                   />
+                  {errors.otp && <p className="text-red-500 text-sm mt-1">{errors.otp}</p>}
                   <p className="text-xs text-muted-foreground mt-2">Check {email}</p>
                 </div>
                 <Button 
                   onClick={handleVerifyOtp}
-                  disabled={loading || otp.length !== 6}
+                  disabled={loading || !isOtpStepValid}
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {loading ? "Verifying..." : "Verify Code"}
@@ -188,6 +277,7 @@ export default function ArtisanSignup() {
                   onClick={() => {
                     setStep("email");
                     setOtp("");
+                    setErrors((prev) => ({ ...prev, otp: "", email: "" }));
                   }}
                   variant="outline"
                   className="w-full"
@@ -210,14 +300,25 @@ export default function ArtisanSignup() {
                     id="name"
                     placeholder="Full name"
                     value={artisanName}
-                    onChange={(e) => setArtisanName(e.target.value)}
-                    className="mt-2"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setArtisanName(value);
+                      setErrors((prev) => ({ ...prev, artisanName: getFieldError("artisanName", value) }));
+                    }}
+                    className={`mt-2 ${errors.artisanName ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {errors.artisanName && <p className="text-red-500 text-sm mt-1">{errors.artisanName}</p>}
                 </div>
 
                 <div>
                   <Label htmlFor="specialty" className="text-sm font-medium">Specialty</Label>
-                  <Select value={specialty} onValueChange={setSpecialty}>
+                  <Select
+                    value={specialty}
+                    onValueChange={(value) => {
+                      setSpecialty(value);
+                      setErrors((prev) => ({ ...prev, specialty: getFieldError("specialty", value) }));
+                    }}
+                  >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select your craft type..." />
                     </SelectTrigger>
@@ -227,6 +328,7 @@ export default function ArtisanSignup() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.specialty && <p className="text-red-500 text-sm mt-1">{errors.specialty}</p>}
                 </div>
 
                 <div>
@@ -237,10 +339,15 @@ export default function ArtisanSignup() {
                       id="location"
                       placeholder="City, Country"
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="pl-10"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setLocation(value);
+                        setErrors((prev) => ({ ...prev, location: getFieldError("location", value) }));
+                      }}
+                      className={`pl-10 ${errors.location ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     />
                   </div>
+                  {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
                 </div>
 
                 <div>
@@ -251,10 +358,15 @@ export default function ArtisanSignup() {
                       id="phone"
                       placeholder="+1 (555) 000-0000"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="pl-10"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setPhone(value);
+                        setErrors((prev) => ({ ...prev, phone: getFieldError("phone", value) }));
+                      }}
+                      className={`pl-10 ${errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     />
                   </div>
+                  {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                 </div>
 
                 <div>
@@ -265,7 +377,16 @@ export default function ArtisanSignup() {
                       type={showPassword ? "text" : "password"}
                       placeholder="At least 8 characters"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPassword(value);
+                        setErrors((prev) => ({
+                          ...prev,
+                          password: getFieldError("password", value),
+                          confirmPassword: confirmPassword ? (confirmPassword === value ? "" : "Passwords don't match") : prev.confirmPassword,
+                        }));
+                      }}
+                      className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                     <button
                       onClick={() => setShowPassword(!showPassword)}
@@ -274,6 +395,7 @@ export default function ArtisanSignup() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
 
                 <div>
@@ -284,7 +406,12 @@ export default function ArtisanSignup() {
                       type={showConfirm ? "text" : "password"}
                       placeholder="Re-enter password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setConfirmPassword(value);
+                        setErrors((prev) => ({ ...prev, confirmPassword: getFieldError("confirmPassword", value) }));
+                      }}
+                      className={errors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                     <button
                       onClick={() => setShowConfirm(!showConfirm)}
@@ -293,11 +420,12 @@ export default function ArtisanSignup() {
                       {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                 </div>
 
                 <Button 
                   onClick={handleCreateProfile}
-                  disabled={loading}
+                  disabled={loading || !isProfileStepValid}
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {loading ? "Creating Profile..." : "Complete Registration"}

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/auth-context";
@@ -15,50 +15,75 @@ export default function CustomerLogin() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({ email: "", name: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const { login } = useAuth();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Shared checks keep field validation consistent.
+  const getFieldError = (field: "email" | "name" | "password", value: string) => {
+    if (field === "email") {
+      if (!value.trim()) return "Email is required";
+      if (!emailPattern.test(value.trim())) return "Invalid email";
+      return "";
+    }
+    if (field === "name") return value.trim() ? "" : "Name is required";
+    if (field === "password") return value.trim() ? "" : "Password is required";
+    return "";
+  };
 
   const handleEmailSubmit = async () => {
-    if (!email) {
+    const emailError = getFieldError("email", email);
+    setErrors((prev) => ({ ...prev, email: emailError }));
+    if (emailError) {
       toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        setStep("password");
-        toast({ title: "Success!", description: "Enter your password" });
-      }, 1000);
+      await wait(1000);
+      setStep("password");
+      setErrors((prev) => ({ ...prev, name: "", password: "" }));
+      toast({ title: "Success!", description: "Enter your password" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogin = async () => {
-    if (!name.trim()) {
+    const nextErrors = {
+      name: getFieldError("name", name),
+      password: getFieldError("password", password),
+    };
+    setErrors((prev) => ({ ...prev, ...nextErrors }));
+    if (nextErrors.name) {
       toast({ title: "Error", description: "Please enter your name", variant: "destructive" });
       return;
     }
-    if (!password) {
+    if (nextErrors.password) {
       toast({ title: "Error", description: "Please enter your password", variant: "destructive" });
       return;
     }
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        login("customer", name.trim());
-        setStep("success");
-        toast({ title: "Welcome back!", description: "Login successful" });
-      }, 1000);
+      await wait(1000);
+      login("customer", name.trim());
+      setStep("success");
+      toast({ title: "Welcome back!", description: "Login successful" });
     } finally {
       setLoading(false);
     }
   };
+
+  const isEmailStepValid = email.trim() && !getFieldError("email", email);
+  const isPasswordStepValid =
+    name.trim() && password.trim() && !getFieldError("name", name) && !getFieldError("password", password);
 
   return (
     <>
@@ -81,14 +106,19 @@ export default function CustomerLogin() {
                     type="email"
                     placeholder="your@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-2"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({ ...prev, email: getFieldError("email", value) }));
+                    }}
+                    className={`mt-2 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     disabled={loading}
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
                 <Button 
                   onClick={handleEmailSubmit}
-                  disabled={loading}
+                  disabled={loading || !isEmailStepValid}
                   className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 >
                   {loading ? "Checking..." : "Continue"}
@@ -129,10 +159,15 @@ export default function CustomerLogin() {
                     type="text"
                     placeholder="What should we call you?"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-2"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setName(value);
+                      setErrors((prev) => ({ ...prev, name: getFieldError("name", value) }));
+                    }}
+                    className={`mt-2 ${errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     disabled={loading}
                   />
+                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                 </div>
 
                 <div>
@@ -143,7 +178,12 @@ export default function CustomerLogin() {
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPassword(value);
+                        setErrors((prev) => ({ ...prev, password: getFieldError("password", value) }));
+                      }}
+                      className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
                       disabled={loading}
                     />
                     <button
@@ -153,6 +193,7 @@ export default function CustomerLogin() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -169,7 +210,7 @@ export default function CustomerLogin() {
 
                 <Button 
                   onClick={handleLogin}
-                  disabled={loading}
+                  disabled={loading || !isPasswordStepValid}
                   className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 >
                   {loading ? "Logging in..." : "Login"}
@@ -179,6 +220,8 @@ export default function CustomerLogin() {
                   onClick={() => {
                     setStep("email");
                     setPassword("");
+                    setName("");
+                    setErrors((prev) => ({ ...prev, email: "", name: "", password: "" }));
                   }}
                   variant="outline"
                   className="w-full"
