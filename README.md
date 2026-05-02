@@ -140,6 +140,15 @@ These services can be used to power storytelling workflows, product description 
 - Database setup compatible with Drizzle configuration
 - API keys for AI providers (if AI features are enabled)
 
+### Environment Variables
+Copy the `.env.example` file to create a new `.env` file:
+```bash
+cp .env.example .env
+```
+Then, fill in the required environment variables in your `.env` file:
+- `GEMINI_API_KEY`: Your Google Gemini API key.
+- `OPENAI_API_KEY`: Your OpenAI API key.
+
 ### Installation
 ```bash
 npm install
