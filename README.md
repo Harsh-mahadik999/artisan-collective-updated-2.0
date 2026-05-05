@@ -187,3 +187,11 @@ This project demonstrates a practical blend of technology, social impact, and cr
 If you like this project, give it a ⭐ and contribute!
 
 ---
+
+## 🔐 Environment Variables
+
+This project uses external AI services (Gemini/OpenAI), which require API keys.
+
+Create a `.env` file in the root directory and add:
+
+---
