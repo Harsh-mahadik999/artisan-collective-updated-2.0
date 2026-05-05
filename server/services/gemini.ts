@@ -1,7 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Use Google Gemini with latest model for better AI generation
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyCoZszH2MDMFP65aAILLk-5bhlqhXDZvB4");
+function getGenAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
+  }
+
+  return new GoogleGenerativeAI(apiKey);
+}
+
 
 export interface StoryGenerationRequest {
   productName: string;
@@ -18,7 +27,8 @@ export interface StoryGenerationResponse {
 
 export async function generateProductStory(request: StoryGenerationRequest): Promise<StoryGenerationResponse> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const genAI = getGenAI();
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const prompt = `You are an expert storyteller specializing in artisan crafts, cultural heritage, and authentic brand narratives. Your task is to create compelling, emotionally resonant content for a handmade product that celebrates craftsmanship and cultural significance.
 
@@ -93,6 +103,7 @@ Important: Respond ONLY with valid JSON in this exact format (no additional text
 
 export async function generateArtisanStory(artisanName: string, specialty: string, location: string): Promise<string> {
   try {
+    const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const prompt = `Write a compelling 2-3 sentence story about an artisan named ${artisanName} who specializes in ${specialty} and is from ${location}. 
