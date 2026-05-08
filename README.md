@@ -187,3 +187,18 @@ This project demonstrates a practical blend of technology, social impact, and cr
 If you like this project, give it a ⭐ and contribute!
 
 ---
+## Environment Setup
+
+Create a `.env` file in the project root and add the following variables:
+
+```env
+GEMINI_API_KEY=your_api_key
+OPENAI_API_KEY=your_api_key
+DATABASE_URL=your_database_url
+```
+
+You can copy the example file:
+
+```bash
+cp .env.example .env
+```
