@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Use Google Gemini with latest model for better AI generation
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyCoZszH2MDMFP65aAILLk-5bhlqhXDZvB4");
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is missing");
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export interface StoryGenerationRequest {
   productName: string;
